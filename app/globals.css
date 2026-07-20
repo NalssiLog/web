@@ -1,0 +1,85 @@
+@import "tailwindcss";
+@import "pretendard/dist/web/variable/pretendardvariable.css";
+
+:root {
+  --sky-50: #f3faff;
+  --sky-100: #e4f5ff;
+  --sky-300: #8dd3f7;
+  --sky-500: #45ace4;
+  --sky-600: #268fc7;
+  --ink: #173144;
+  --muted: #718594;
+}
+
+* { box-sizing: border-box; }
+html { background: #deeff8; }
+body {
+  margin: 0;
+  min-height: 100vh;
+  color: var(--ink);
+  background: linear-gradient(145deg, #deeff8 0%, #f4fbff 50%, #ddecf5 100%);
+  font-family: "Pretendard Variable", Pretendard, "Apple SD Gothic Neo", "Noto Sans KR", sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+button, input, textarea { font: inherit; }
+button { cursor: pointer; }
+.app-shell {
+  position: relative;
+  width: min(100%, 480px);
+  min-height: 100vh;
+  margin: 0 auto;
+  overflow-x: clip;
+  background: #eef9ff;
+  box-shadow: 0 0 48px rgba(48, 98, 126, .12);
+}
+.page { min-height: 100vh; padding: 0 20px 112px; }
+.safe-top { padding-top: max(24px, env(safe-area-inset-top)); }
+.mobile-fixed {
+  position: fixed;
+  z-index: 30;
+  left: 50%;
+  bottom: 0;
+  width: min(100%, 480px);
+  transform: translateX(-50%);
+  padding: 14px 20px max(18px, env(safe-area-inset-bottom));
+  border-top: 1px solid #dcecf4;
+  background: #eef9ff;
+}
+.primary-button {
+  display: flex;
+  width: 100%;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 56px;
+  border: 0;
+  border-radius: 18px;
+  color: white;
+  font-weight: 800;
+  background: var(--sky-500);
+  box-shadow: 0 8px 20px rgba(69,172,228,.18);
+  transition: transform .15s, background .15s;
+}
+.primary-button:active { transform: scale(.985); }
+.primary-button:disabled { cursor: not-allowed; opacity: .55; }
+.icon-button {
+  display: inline-flex;
+  width: 42px;
+  height: 42px;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid #e6eef3;
+  border-radius: 14px;
+  color: var(--ink);
+  background: white;
+}
+.skeleton { overflow: hidden; background: #eaf2f6; animation: pulse 1.5s ease-in-out infinite; }
+@keyframes pulse { 50% { opacity: .55; } }
+@keyframes toast-in {
+  from { opacity: 0; transform: translateY(-8px) scale(.98); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+@media (min-width: 481px) {
+  .app-shell { min-height: 100vh; }
+  .mobile-fixed { bottom: 0; }
+}
