@@ -3,6 +3,7 @@ import type {
   SunlightStatus,
   TemperatureStatus,
   Location,
+  SocialProvider,
 } from "@/lib/types";
 
 export const TEMPERATURE_OPTIONS: ReadonlyArray<{
@@ -45,6 +46,12 @@ export const SUGGESTED_MESSAGES = [
 
 export const DEFAULT_LOCATION = "강남구 역삼동";
 export const DEFAULT_REPORT_IMAGE = "/weather/clear-sky.webp";
+export const SERVICE_CONTACT_EMAIL = "yourweather.team@gmail.com";
+export const MOCK_SOCIAL_PROFILES: Record<SocialProvider, { email: string; name: string; nickname: string }> = {
+  NAVER: { email: "weather-neighbor@naver.com", name: "김날씨", nickname: "초록이웃" },
+  KAKAO: { email: "weather-neighbor@kakao.com", name: "이날씨", nickname: "노란이웃" },
+  GOOGLE: { email: "weather-neighbor@gmail.com", name: "박날씨", nickname: "구름이웃" },
+};
 export const DEFAULT_PROFILE_IMAGES = [
   { src: "/avatars/cloud.svg", label: "구름" },
   { src: "/avatars/sun.svg", label: "햇빛" },
@@ -95,7 +102,7 @@ export const POPULAR_LOCATIONS = SUPPORTED_LOCATIONS.filter((location) =>
   POPULAR_LOCATION_IDS.includes(location.id as (typeof POPULAR_LOCATION_IDS)[number]),
 );
 
-export function formatHelpfulCount(count: number) {
+export function formatThanksCount(count: number) {
   return count > 999 ? "999+" : String(count);
 }
 

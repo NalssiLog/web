@@ -10,7 +10,7 @@ import { useParams, useRouter } from "next/navigation";
 import { useRef, useState, type ReactNode } from "react";
 import { ErrorState } from "@/components/error-state";
 import { weatherApi } from "@/lib/api";
-import { PRECIPITATION_OPTIONS, SUNLIGHT_OPTIONS, TEMPERATURE_OPTIONS, formatHelpfulCount, statusLabel } from "@/lib/constants";
+import { PRECIPITATION_OPTIONS, SUNLIGHT_OPTIONS, TEMPERATURE_OPTIONS, formatThanksCount, statusLabel } from "@/lib/constants";
 import type { WeatherReport } from "@/lib/types";
 import { useToastStore } from "@/store/toast-store";
 import { useAuthStore } from "@/store/auth-store";
@@ -22,17 +22,17 @@ export function ReportDetail() {
   const showToast = useToastStore((state) => state.showToast);
   const currentUser = useAuthStore((state) => state.user);
   const report = useQuery({ queryKey: ["weather-report", id], queryFn: () => weatherApi.getReport(id) });
-  const helpful = useMutation<WeatherReport, Error, void, { previous?: WeatherReport }>({
-    mutationFn: () => weatherApi.toggleHelpful(id),
+  const thanks = useMutation<WeatherReport, Error, void, { previous?: WeatherReport }>({
+    mutationFn: () => weatherApi.toggleThanks(id),
     onMutate: async () => {
       await queryClient.cancelQueries({ queryKey: ["weather-report", id] });
       const previous = queryClient.getQueryData<WeatherReport>(["weather-report", id]);
       if (previous) {
-        const isHelpful = !previous.isHelpful;
+        const isThanked = !previous.isThanked;
         queryClient.setQueryData<WeatherReport>(["weather-report", id], {
           ...previous,
-          isHelpful,
-          helpfulCount: Math.max(0, previous.helpfulCount + (isHelpful ? 1 : -1)),
+          isThanked,
+          thanksCount: Math.max(0, previous.thanksCount + (isThanked ? 1 : -1)),
         });
       }
       return { previous };
@@ -60,8 +60,8 @@ export function ReportDetail() {
       <header className="flex items-center gap-3 px-5 pb-5">
         <span className="flex size-11 shrink-0 items-center justify-center rounded-full bg-white text-xl shadow-sm shadow-[#b8d6e6]/20" aria-hidden="true">{item.author.type === "ANONYMOUS" ? "☁️" : "🌤️"}</span>
         <div className="min-w-0 flex-1">{authorHref ? <Link href={authorHref} className="font-extrabold transition-colors hover:text-[#268fc7]">{author}</Link> : <p className="font-extrabold">{author}</p>}<p className="mt-0.5 text-xs font-semibold text-[#718594]">{format(new Date(item.createdAt), "M월 d일 a h:mm", { locale: ko })}</p></div>
-        <button type="button" disabled={helpful.isPending} onClick={() => helpful.mutate()} aria-pressed={item.isHelpful} className={`flex shrink-0 items-center justify-center gap-1.5 rounded-[13px] border-2 px-3 py-2 text-xs font-extrabold transition-colors duration-150 disabled:cursor-wait ${item.isHelpful ? "border-[#75c4ec] bg-[#e7f6ff] text-[#268fc7]" : "border-[#b9ddf0] bg-white text-[#45ace4]"}`}>
-          <Heart size={15} fill={item.isHelpful ? "currentColor" : "none"} className="-translate-y-px" /> 감사해요! <span className="font-bold">{formatHelpfulCount(item.helpfulCount)}</span>
+        <button type="button" disabled={thanks.isPending} onClick={() => thanks.mutate()} aria-pressed={item.isThanked} className={`flex shrink-0 items-center justify-center gap-1.5 rounded-[13px] border-2 px-3 py-2 text-xs font-extrabold transition-colors duration-150 disabled:cursor-wait ${item.isThanked ? "border-[#75c4ec] bg-[#e7f6ff] text-[#268fc7]" : "border-[#b9ddf0] bg-white text-[#45ace4]"}`}>
+          <Heart size={15} fill={item.isThanked ? "currentColor" : "none"} className="-translate-y-px" /> 감사해요! <span className="font-bold">{formatThanksCount(item.thanksCount)}</span>
         </button>
       </header>
 

@@ -15,6 +15,6 @@ export interface WeatherApi {
   getMemberReports(id: string): Promise<WeatherReport[]>;
   getReport(id: string): Promise<WeatherReport>;
   createReport(input: CreateReportInput): Promise<WeatherReport>;
-  toggleHelpful(id: string): Promise<WeatherReport>;
+  toggleThanks(id: string): Promise<WeatherReport>;
   reverseGeocode(latitude: number, longitude: number): Promise<Location>;
 }

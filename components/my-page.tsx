@@ -31,7 +31,7 @@ export function MyPage() {
   }
 
   return (
-    <main className="min-h-screen pb-10">
+    <main className="min-h-[75dvh] pb-12">
       <header className="safe-top sticky top-0 z-30 flex items-center justify-between bg-[#eef9ff] px-5 pb-3">
         <button type="button" onClick={() => router.back()} className="icon-button" aria-label="뒤로 가기"><ArrowLeft size={21} /></button>
         <h1 className="text-lg font-extrabold">마이페이지</h1>

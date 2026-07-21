@@ -22,6 +22,6 @@ export const httpWeatherApi: WeatherApi = {
     input.images.forEach((image) => formData.append("images", image));
     return request("/api/v1/weather-reports", { method: "POST", body: formData });
   },
-  toggleHelpful: (id) => request(`/api/v1/weather-reports/${id}/helpful`, { method: "POST" }),
+  toggleThanks: (id) => request(`/api/v1/weather-reports/${id}/thanks`, { method: "POST" }),
   reverseGeocode: (latitude, longitude) => request(`/api/v1/locations/reverse-geocode?latitude=${latitude}&longitude=${longitude}`),
 };

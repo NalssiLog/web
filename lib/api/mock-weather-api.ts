@@ -61,18 +61,18 @@ export const mockWeatherApi: WeatherApi = {
         ? { type: "MEMBER", id: user.id, nickname: user.nickname }
         : { type: "ANONYMOUS" },
       createdAt: new Date().toISOString(),
-      helpfulCount: 0,
-      isHelpful: false,
+      thanksCount: 0,
+      isThanked: false,
     };
     mockReports.unshift(report);
     return report;
   },
-  async toggleHelpful(id) {
+  async toggleThanks(id) {
     await wait(180);
     const report = mockReports.find((item) => item.id === id);
     if (!report) throw new Error("제보를 찾을 수 없어요.");
-    report.isHelpful = !report.isHelpful;
-    report.helpfulCount = Math.max(0, report.helpfulCount + (report.isHelpful ? 1 : -1));
+    report.isThanked = !report.isThanked;
+    report.thanksCount = Math.max(0, report.thanksCount + (report.isThanked ? 1 : -1));
     return { ...report };
   },
   async reverseGeocode(latitude, longitude) {

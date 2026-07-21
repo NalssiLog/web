@@ -5,7 +5,7 @@ import { ko } from "date-fns/locale";
 import { Heart, MapPin } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
-import { DEFAULT_REPORT_IMAGE, TEMPERATURE_OPTIONS, formatHelpfulCount, statusLabel } from "@/lib/constants";
+import { DEFAULT_REPORT_IMAGE, TEMPERATURE_OPTIONS, formatThanksCount, statusLabel } from "@/lib/constants";
 import type { WeatherReport } from "@/lib/types";
 
 export function ReportCard({ report, compact = false }: { report: WeatherReport; compact?: boolean }) {
@@ -20,8 +20,8 @@ export function ReportCard({ report, compact = false }: { report: WeatherReport;
           <span className="text-base font-semibold drop-shadow">{statusLabel(TEMPERATURE_OPTIONS, report.temperature)}</span>
           <span className="shrink-0 text-[13px] font-semibold text-white/85">{ago}</span>
         </div>
-        <span className="absolute right-2.5 top-2.5 z-20 flex items-center gap-1 text-[13px] font-semibold text-white drop-shadow-[0_1px_2px_rgba(0,0,0,.8)]" aria-label={`감사해요 수 ${report.helpfulCount}`}>
-          <Heart size={14} fill={report.isHelpful ? "currentColor" : "none"} className="-translate-y-px" /> {formatHelpfulCount(report.helpfulCount)}
+        <span className="absolute right-2.5 top-2.5 z-20 flex items-center gap-1 text-[13px] font-semibold text-white drop-shadow-[0_1px_2px_rgba(0,0,0,.8)]" aria-label={`감사해요 수 ${report.thanksCount}`}>
+          <Heart size={14} fill={report.isThanked ? "currentColor" : "none"} className="-translate-y-px" /> {formatThanksCount(report.thanksCount)}
         </span>
       </>}
       {compact && <>
@@ -31,7 +31,7 @@ export function ReportCard({ report, compact = false }: { report: WeatherReport;
           <span className="truncate">{report.location.label}</span>
         </span>
         <span className="absolute bottom-1.5 left-2 z-20 text-[16px] font-semibold text-white [text-shadow:0_1px_3px_rgba(0,0,0,.5)]">{compactDate}</span>
-        <span className="absolute bottom-2 right-2 z-20 flex items-center gap-1 text-[11px] font-semibold text-white drop-shadow-[0_1px_2px_rgba(0,0,0,.8)]" aria-label={`감사해요 수 ${report.helpfulCount}`}><Heart size={11} fill={report.isHelpful ? "currentColor" : "none"} className="-translate-y-px" /> {formatHelpfulCount(report.helpfulCount)}</span>
+        <span className="absolute bottom-2 right-2 z-20 flex items-center gap-1 text-[11px] font-semibold text-white drop-shadow-[0_1px_2px_rgba(0,0,0,.8)]" aria-label={`감사해요 수 ${report.thanksCount}`}><Heart size={11} fill={report.isThanked ? "currentColor" : "none"} className="-translate-y-px" /> {formatThanksCount(report.thanksCount)}</span>
       </>}
     </Link>
   );

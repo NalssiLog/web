@@ -2,7 +2,7 @@
 
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
-import { DEFAULT_PROFILE_IMAGES } from "@/lib/constants";
+import { DEFAULT_PROFILE_IMAGES, MOCK_SOCIAL_PROFILES } from "@/lib/constants";
 import type { CurrentUser, SocialProvider } from "@/lib/types";
 
 type MemberUser = Extract<CurrentUser, { type: "MEMBER" }>;
@@ -11,7 +11,11 @@ type MemberProfiles = Partial<Record<SocialProvider, MemberUser>>;
 interface AuthState {
   user: CurrentUser;
   memberProfiles: MemberProfiles;
+  pendingSignupProvider?: SocialProvider;
   login: (provider: SocialProvider) => void;
+  signup: (provider: SocialProvider, name: string, nickname: string) => void;
+  linkAndLogin: (provider: SocialProvider, sourceProvider: SocialProvider) => void;
+  setPendingSignupProvider: (provider?: SocialProvider) => void;
   logout: () => void;
   withdraw: () => void;
   setProfileImage: (avatarUrl?: string) => void;
@@ -21,18 +25,31 @@ interface AuthState {
 
 const anonymousUser: CurrentUser = { type: "ANONYMOUS" };
 
-const providerProfile: Record<SocialProvider, { email: string; nickname: string }> = {
-  NAVER: { email: "weather-neighbor@naver.com", nickname: "초록이웃" },
-  KAKAO: { email: "weather-neighbor@kakao.com", nickname: "노란이웃" },
-  GOOGLE: { email: "weather-neighbor@gmail.com", nickname: "구름이웃" },
-};
-
 const randomDefaultProfile = () =>
   DEFAULT_PROFILE_IMAGES[Math.floor(Math.random() * DEFAULT_PROFILE_IMAGES.length)].src;
 
-const withSavedMember = (memberProfiles: MemberProfiles, user: MemberUser) => ({
-  ...memberProfiles,
-  [user.provider]: user,
+const withSavedMember = (memberProfiles: MemberProfiles, user: MemberUser) => {
+  const nextProfiles = { ...memberProfiles };
+  const providers = new Set([user.provider, ...(user.linkedProviders ?? [])]);
+  providers.forEach((provider) => {
+    nextProfiles[provider] = user;
+  });
+  return nextProfiles;
+};
+
+const createMember = (
+  provider: SocialProvider,
+  name = MOCK_SOCIAL_PROFILES[provider].name,
+  nickname = MOCK_SOCIAL_PROFILES[provider].nickname,
+): MemberUser => ({
+  type: "MEMBER",
+  id: `mock-${provider.toLowerCase()}`,
+  provider,
+  linkedProviders: [provider],
+  avatarUrl: randomDefaultProfile(),
+  email: MOCK_SOCIAL_PROFILES[provider].email,
+  name,
+  nickname,
 });
 
 export const useAuthStore = create<AuthState>()(
@@ -40,25 +57,51 @@ export const useAuthStore = create<AuthState>()(
     (set) => ({
       user: anonymousUser,
       memberProfiles: {},
+      pendingSignupProvider: undefined,
       login: (provider) => {
         set((state) => {
           const savedProfile = state.memberProfiles[provider];
-          const user: MemberUser = savedProfile ?? {
-            type: "MEMBER",
-            id: `mock-${provider.toLowerCase()}`,
-            provider,
-            linkedProviders: [provider],
-            avatarUrl: randomDefaultProfile(),
-            ...providerProfile[provider],
-          };
+          const user: MemberUser = savedProfile
+            ? { ...savedProfile, provider, email: MOCK_SOCIAL_PROFILES[provider].email, name: savedProfile.name ?? MOCK_SOCIAL_PROFILES[provider].name }
+            : createMember(provider);
           return {
             user,
-            memberProfiles: savedProfile
-              ? state.memberProfiles
-              : withSavedMember(state.memberProfiles, user),
+            pendingSignupProvider: undefined,
+            memberProfiles: withSavedMember(state.memberProfiles, user),
           };
         });
       },
+      signup: (provider, name, nickname) =>
+        set((state) => {
+          const user = createMember(provider, name, nickname);
+          return {
+            user,
+            pendingSignupProvider: undefined,
+            memberProfiles: withSavedMember(state.memberProfiles, user),
+          };
+        }),
+      linkAndLogin: (provider, sourceProvider) =>
+        set((state) => {
+          const sourceProfile = state.memberProfiles[sourceProvider];
+          if (!sourceProfile) return state;
+          const linkedProviders = Array.from(new Set([
+            ...(sourceProfile.linkedProviders ?? [sourceProvider]),
+            sourceProvider,
+            provider,
+          ]));
+          const user: MemberUser = {
+            ...sourceProfile,
+            provider,
+            email: MOCK_SOCIAL_PROFILES[provider].email,
+            linkedProviders,
+          };
+          return {
+            user,
+            pendingSignupProvider: undefined,
+            memberProfiles: withSavedMember(state.memberProfiles, user),
+          };
+        }),
+      setPendingSignupProvider: (pendingSignupProvider) => set({ pendingSignupProvider }),
       logout: () =>
         set((state) => ({
           user: anonymousUser,
@@ -70,7 +113,8 @@ export const useAuthStore = create<AuthState>()(
         set((state) => {
           if (state.user.type !== "MEMBER") return { user: anonymousUser };
           const memberProfiles = { ...state.memberProfiles };
-          delete memberProfiles[state.user.provider];
+          const providers = new Set([state.user.provider, ...(state.user.linkedProviders ?? [])]);
+          providers.forEach((provider) => delete memberProfiles[provider]);
           return { user: anonymousUser, memberProfiles };
         }),
       setProfileImage: (avatarUrl) =>
@@ -98,14 +142,16 @@ export const useAuthStore = create<AuthState>()(
     }),
     {
       name: "your-weather-auth",
-      version: 1,
+      version: 2,
       migrate: (persistedState) => {
         const state = persistedState as Partial<AuthState>;
         const memberProfiles = state.memberProfiles ?? {};
         if (state.user?.type !== "MEMBER") return { ...state, user: anonymousUser, memberProfiles };
-        const user: MemberUser = state.user.avatarUrl
-          ? state.user
-          : { ...state.user, avatarUrl: randomDefaultProfile() };
+        const user: MemberUser = {
+          ...state.user,
+          name: state.user.name ?? MOCK_SOCIAL_PROFILES[state.user.provider].name,
+          avatarUrl: state.user.avatarUrl ?? randomDefaultProfile(),
+        };
         return { ...state, user, memberProfiles: withSavedMember(memberProfiles, user) };
       },
       partialize: (state) => ({ user: state.user, memberProfiles: state.memberProfiles }),

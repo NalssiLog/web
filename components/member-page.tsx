@@ -15,7 +15,7 @@ export function MemberPage({ memberId }: { memberId: string }) {
   const profile = useQuery({ queryKey: ["member-profile", memberId], queryFn: () => weatherApi.getMemberProfile(memberId) });
 
   if (profile.isLoading) {
-    return <main className="min-h-screen"><header className="safe-top flex items-center justify-between px-5 pb-4"><button type="button" onClick={() => router.back()} className="icon-button" aria-label="뒤로 가기"><ArrowLeft size={21} /></button><div className="skeleton h-5 w-24 rounded" /><span className="w-[42px]" /></header><div className="px-5 py-6"><div className="skeleton size-20 rounded-full" /><div className="mt-8 grid grid-cols-3 gap-1.5">{Array.from({ length: 6 }).map((_, index) => <div key={index} className="skeleton aspect-square rounded-lg" />)}</div></div></main>;
+    return <main className="min-h-[75dvh] pb-12"><header className="safe-top flex items-center justify-between px-5 pb-4"><button type="button" onClick={() => router.back()} className="icon-button" aria-label="뒤로 가기"><ArrowLeft size={21} /></button><div className="skeleton h-5 w-24 rounded" /><span className="w-[42px]" /></header><div className="px-5 py-6"><div className="skeleton size-20 rounded-full" /><div className="mt-8 grid grid-cols-3 gap-1.5">{Array.from({ length: 6 }).map((_, index) => <div key={index} className="skeleton aspect-square rounded-lg" />)}</div></div></main>;
   }
 
   if (profile.isError || !profile.data) {
@@ -23,7 +23,7 @@ export function MemberPage({ memberId }: { memberId: string }) {
   }
 
   return (
-    <main className="min-h-screen pb-10">
+    <main className="min-h-[75dvh] pb-12">
       <header className="safe-top sticky top-0 z-30 flex items-center justify-between bg-[#eef9ff] px-5 pb-3">
         <button type="button" onClick={() => router.back()} className="icon-button" aria-label="뒤로 가기"><ArrowLeft size={21} /></button>
         <h1 className="text-lg font-extrabold">프로필</h1>

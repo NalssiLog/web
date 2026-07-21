@@ -11,6 +11,7 @@ export type CurrentUser =
   | {
       type: "MEMBER";
       id: string;
+      name: string;
       nickname: string;
       email: string;
       provider: SocialProvider;
@@ -43,8 +44,8 @@ export interface WeatherReport {
   sunlight: SunlightStatus;
   author: WeatherAuthor;
   createdAt: string;
-  helpfulCount: number;
-  isHelpful: boolean;
+  thanksCount: number;
+  isThanked: boolean;
 }
 
 export interface WeatherSummary {
