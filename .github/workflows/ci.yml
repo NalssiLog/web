@@ -1,4 +1,4 @@
-name: Frontend CI
+name: CI
 
 on:
   push:
@@ -20,6 +20,8 @@ jobs:
     timeout-minutes: 15
     env:
       NEXT_PUBLIC_API_BASE_URL: http://localhost:8080
+      NEXT_PUBLIC_APP_ENV: development
+      NEXT_PUBLIC_LOG_LEVEL: warn
 
     steps:
       - name: Checkout repository
@@ -39,6 +41,9 @@ jobs:
 
       - name: Lint
         run: npm run lint
+
+      - name: Test
+        run: npm test
 
       - name: Build
         run: npm run build

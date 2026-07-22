@@ -6,11 +6,12 @@ import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { MyReportList } from "@/components/my-report-list";
 import { NicknameEditModal } from "@/components/nickname-edit-modal";
-import { ProfileImageModal } from "@/components/profile-image-modal";
+import { ProfileImageModal, type ProfileImageSelection } from "@/components/profile-image-modal";
 import { ProfilePreviewModal } from "@/components/profile-preview-modal";
 import { UserPanel } from "@/components/user-panel";
 import { memberApi } from "@/lib/api/member-api";
-import { getProfilePresetId, resolveProfileImage } from "@/lib/constants";
+import { resolveProfileImage } from "@/lib/constants";
+import { optimizeAvatarImage } from "@/lib/image";
 import { useAuthStore } from "@/store/auth-store";
 import { useToastStore } from "@/store/toast-store";
 
@@ -38,9 +39,9 @@ export function MyPage() {
 
   const saveNickname = async (nickname: string) => {
     try {
-      await memberApi.updateNickname(nickname);
-      setNickname(nickname);
-      await queryClient.invalidateQueries({ queryKey: ["members", "me"] });
+      const updatedAccount = await memberApi.updateNickname(nickname);
+      setNickname(updatedAccount.nickname);
+      queryClient.setQueryData(["members", "me"], updatedAccount);
       setIsNicknameOpen(false);
       showToast("닉네임을 변경했어요.", "SUCCESS");
     } catch (error) {
@@ -48,16 +49,13 @@ export function MyPage() {
     }
   };
 
-  const saveProfileImage = async (nextAvatarUrl?: string) => {
-    const presetId = getProfilePresetId(nextAvatarUrl);
-    if (!presetId) {
-      showToast("내 사진 업로드는 스토리지 연결 후 사용할 수 있어요.", "INFO");
-      return false;
-    }
+  const saveProfileImage = async (selection: ProfileImageSelection) => {
     try {
-      await memberApi.updateAvatar("PRESET", presetId);
-      setProfileImage(resolveProfileImage(presetId));
-      await queryClient.invalidateQueries({ queryKey: ["members", "me"] });
+      const updatedAccount = selection.type === "PRESET"
+        ? await memberApi.updateAvatar("PRESET", selection.value)
+        : await memberApi.updateCustomAvatar(await optimizeAvatarImage(selection.file));
+      setProfileImage(resolveProfileImage(updatedAccount.avatar.profileImageUrl ?? updatedAccount.avatar.value));
+      queryClient.setQueryData(["members", "me"], updatedAccount);
       showToast("프로필 사진을 변경했어요.", "SUCCESS");
       return true;
     } catch (error) {

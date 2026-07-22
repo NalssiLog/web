@@ -76,7 +76,10 @@ export const authApi = {
   signup: (body: SignupRequest) => jsonRequest<unknown>("/api/auth/signup", "POST", body),
   refresh: () => jsonRequest<void>("/api/auth/refresh", "POST"),
   logout: () => jsonRequest<void>("/api/auth/logout", "POST"),
+  withdraw: () => jsonRequest<void>("/api/auth/withdraw", "DELETE"),
   consentToLink: () => jsonRequest<{ authorizationUrl: string }>("/api/auth/link/consent", "POST"),
   cancelLink: () => jsonRequest<void>("/api/auth/link/cancel", "POST"),
+  linkSocial: (provider: SocialProvider) =>
+    jsonRequest<{ authorizationUrl: string }>(`/api/auth/link/social/${providerPath[provider]}`, "POST"),
   checkNickname: (nickname: string) => apiRequest<{ available: boolean }>(`/api/members/nickname/availability?nickname=${encodeURIComponent(nickname)}`),
 };

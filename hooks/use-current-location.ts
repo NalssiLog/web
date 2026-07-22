@@ -2,8 +2,11 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { weatherApi } from "@/lib/api";
+import { logger } from "@/lib/logging";
 import type { Location } from "@/lib/types";
 import { useLocationStore } from "@/store/location-store";
+
+const locationLogger = logger.child("location.detection");
 
 export function useCurrentLocation() {
   const { location, setLocation, hasAttemptedDetection, markDetectionAttempted } = useLocationStore();
@@ -15,6 +18,7 @@ export function useCurrentLocation() {
     markDetectionAttempted();
     setDetectionError("");
     if (!navigator.geolocation) {
+      locationLogger.warn("geolocation_unavailable", { reason: "unsupported_browser" });
       setDetectionError("이 브라우저에서는 현재 위치를 사용할 수 없어요.");
       setNeedsManualInput(true);
       return Promise.resolve(null);
@@ -30,7 +34,10 @@ export function useCurrentLocation() {
               setNeedsManualInput(false);
             }
             resolve(result);
-          } catch {
+          } catch (error) {
+            locationLogger.warn("reverse_geocode_failed", {
+              reason: error instanceof Error ? error.name : "unknown",
+            });
             setDetectionError("위치 서버에 연결하지 못했어요. 다시 시도하거나 동네를 검색해 주세요.");
             setNeedsManualInput(true);
             resolve(null);
@@ -39,6 +46,11 @@ export function useCurrentLocation() {
           }
         },
         (error) => {
+          if (error.code === error.PERMISSION_DENIED) {
+            locationLogger.info("geolocation_permission_denied");
+          } else {
+            locationLogger.warn("geolocation_failed", { code: error.code });
+          }
           setIsDetecting(false);
           setDetectionError(error.code === error.PERMISSION_DENIED
             ? "위치 권한이 없어 현재 동네를 찾지 못했어요. 동네를 직접 검색해 주세요."
