@@ -1,6 +1,7 @@
 import { resolveProfileImage } from "@/lib/constants";
 import { ApiError, apiRequest, jsonRequest } from "@/lib/api/http-client";
 import { locationApi, normalizeLocation, type LocationResponse } from "@/lib/api/location-api";
+import { logger } from "@/lib/logging";
 import type { WeatherApi } from "@/lib/api/weather-api";
 import type {
   CreateReportOptions,
@@ -12,6 +13,8 @@ import type {
   TemperatureStatus,
   WeatherReport,
 } from "@/lib/types";
+
+const reportUploadLogger = logger.child("report.image_upload");
 
 interface BackendReport {
   id: string;
@@ -182,6 +185,10 @@ async function uploadReportImages(files: File[], options: CreateReportOptions) {
   }, { signal: options.signal });
 
   if (presigned.uploads.length !== files.length) {
+    reportUploadLogger.error("presign_response_invalid", new Error("Report presign response count mismatch"), {
+      requestedCount: files.length,
+      receivedCount: presigned.uploads.length,
+    });
     throw new ApiError(0, "IMAGE_UPLOAD_FAILED", "사진 업로드 정보를 확인하지 못했어요.");
   }
 
@@ -196,9 +203,16 @@ async function uploadReportImages(files: File[], options: CreateReportOptions) {
     });
   };
   options.onProgress?.({ stage: "UPLOADING", percent: 10 });
-  await Promise.all(presigned.uploads.map((upload, index) =>
-    putImageWithRetry(upload.uploadUrl, files[index], options.signal, (loaded) => updateProgress(index, loaded)),
-  ));
+  try {
+    await Promise.all(presigned.uploads.map((upload, index) =>
+      putImageWithRetry(upload.uploadUrl, files[index], options.signal, (loaded) => updateProgress(index, loaded)),
+    ));
+  } catch (error) {
+    if (!(error instanceof DOMException && error.name === "AbortError")) {
+      reportUploadLogger.error("r2_upload_failed", error, { fileCount: files.length });
+    }
+    throw error;
+  }
 
   return presigned.uploads.map((upload) => upload.storageKey);
 }

@@ -21,6 +21,7 @@ import {
 import { WithdrawalConfirmModal } from "@/components/withdrawal-confirm-modal";
 import { SocialIcon } from "@/components/social-icon";
 import { authApi } from "@/lib/api/auth-api";
+import { resolveApiUrl } from "@/lib/api/config";
 import { memberApi } from "@/lib/api/member-api";
 import { SERVICE_CONTACT_EMAIL } from "@/lib/constants";
 import { getTextLength, truncateText } from "@/lib/text";
@@ -46,6 +47,7 @@ export function UserPanel({ open, onClose }: { open: boolean; onClose: () => voi
   const openLegalDocument = useLegalModalStore((state) => state.openLegalDocument);
   const [view, setView] = useState<"MAIN" | "ACCOUNT" | "FEEDBACK">("MAIN");
   const [isWithdrawalOpen, setIsWithdrawalOpen] = useState(false);
+  const [isWithdrawing, setIsWithdrawing] = useState(false);
   const [feedback, setFeedback] = useState("");
   const [isSubmittingFeedback, setIsSubmittingFeedback] = useState(false);
   const [checkingProvider, setCheckingProvider] = useState<SocialProvider | null>(null);
@@ -111,18 +113,40 @@ export function UserPanel({ open, onClose }: { open: boolean; onClose: () => voi
 
   const handleSocialToggle = async (provider: SocialProvider) => {
     const memberAccount = account.data;
-    if (!memberAccount || provider === memberAccount.currentProvider) return;
+    if (!memberAccount) return;
     const linked = memberAccount.connectedProviders.includes(provider);
-    if (!linked) {
-      showToast("소셜 계정 추가 연동은 준비 중이에요.", "INFO");
-      return;
-    }
+    if (linked && memberAccount.connectedProviders.length === 1) return;
+    setCheckingProvider(provider);
     try {
-      await memberApi.disconnectSocialAccount(provider);
-      await queryClient.invalidateQueries({ queryKey: ["members", "me"] });
-      showToast(`${providerLabel[provider]} 계정 연동을 해제했어요.`, "SUCCESS");
+      if (linked) {
+        await memberApi.disconnectSocialAccount(provider);
+        await queryClient.invalidateQueries({ queryKey: ["members", "me"] });
+        showToast(`${providerLabel[provider]} 계정 연동을 해제했어요.`, "SUCCESS");
+      } else {
+        const { authorizationUrl } = await authApi.linkSocial(provider);
+        window.location.assign(resolveApiUrl(authorizationUrl));
+      }
     } catch (error) {
-      showToast(error instanceof Error ? error.message : "소셜 계정 연동을 해제하지 못했어요.", "ERROR");
+      showToast(error instanceof Error ? error.message : `소셜 계정 ${linked ? "연동을 해제" : "연동을 시작"}하지 못했어요.`, "ERROR");
+    } finally {
+      setCheckingProvider(null);
+    }
+  };
+
+  const handleWithdrawal = async () => {
+    if (isWithdrawing) return;
+    setIsWithdrawing(true);
+    try {
+      await authApi.withdraw();
+      queryClient.clear();
+      clearUser();
+      closePanel();
+      showToast("회원 탈퇴가 완료됐어요.", "SUCCESS");
+      router.replace("/");
+    } catch (error) {
+      showToast(error instanceof Error ? error.message : "회원 탈퇴를 완료하지 못했어요.", "ERROR");
+    } finally {
+      setIsWithdrawing(false);
     }
   };
 
@@ -160,10 +184,11 @@ export function UserPanel({ open, onClose }: { open: boolean; onClose: () => voi
               {socialProviders.map((provider, index) => {
                 const isCurrent = memberAccount?.currentProvider === provider;
                 const isLinked = memberAccount?.connectedProviders.includes(provider) ?? false;
+                const isLastLinked = isLinked && memberAccount?.connectedProviders.length === 1;
                 return <div key={provider} className={`flex items-center gap-3 px-4 py-3 ${index < socialProviders.length - 1 ? "border-b border-[#edf2f5]" : ""}`}>
                   <SocialIcon provider={provider} />
                   <div><p className="text-sm font-extrabold">{providerLabel[provider]}</p><p className={`mt-0.5 text-[11px] font-extrabold ${isCurrent ? "text-[#238fc9]" : "text-[#718594]"}`}>{isCurrent ? "현재 로그인" : isLinked ? "연동됨" : "연동 안 됨"}</p></div>
-                  <button type="button" role="switch" disabled={!memberAccount || isCurrent} aria-checked={isLinked} aria-label={`${providerLabel[provider]} 계정 연동`} onClick={() => void handleSocialToggle(provider)} className={`ml-auto flex h-7 w-12 items-center rounded-full p-0.5 transition-colors ${isLinked ? "bg-[#45ace4]" : "bg-[#cbd6dc]"} disabled:cursor-default`}><span className={`size-6 rounded-full bg-white shadow-sm transition-transform ${isLinked ? "translate-x-5" : "translate-x-0"}`} /></button>
+                  <button type="button" role="switch" disabled={!memberAccount || isLastLinked || checkingProvider !== null} aria-checked={isLinked} aria-label={`${providerLabel[provider]} 계정 연동`} onClick={() => void handleSocialToggle(provider)} className={`ml-auto flex h-7 w-12 items-center rounded-full p-0.5 transition-colors ${isLinked ? "bg-[#45ace4]" : "bg-[#cbd6dc]"} disabled:cursor-default disabled:opacity-60`}><span className={`size-6 rounded-full bg-white shadow-sm transition-transform ${isLinked ? "translate-x-5" : "translate-x-0"}`} /></button>
                 </div>;
               })}
             </div>
@@ -195,7 +220,7 @@ export function UserPanel({ open, onClose }: { open: boolean; onClose: () => voi
           <button type="button" disabled={checkingProvider !== null} onClick={() => void openServerLogin("GOOGLE")} className="flex size-11 items-center justify-center rounded-full border border-[#e2e8ec] bg-white text-lg font-black shadow-sm transition hover:-translate-y-0.5 disabled:cursor-wait disabled:opacity-60" aria-label="구글 로그인"><span className="bg-[conic-gradient(from_-45deg,#4285f4_0_25%,#34a853_0_42%,#fbbc05_0_67%,#ea4335_0_84%,#4285f4_0)] bg-clip-text text-transparent">G</span></button>
         </div>}
       </div>
-      {member && isWithdrawalOpen && <WithdrawalConfirmModal onClose={() => setIsWithdrawalOpen(false)} onConfirm={() => { showToast("회원 탈퇴 기능은 준비 중이에요.", "INFO"); setIsWithdrawalOpen(false); }} />}
+      {member && isWithdrawalOpen && <WithdrawalConfirmModal isSubmitting={isWithdrawing} onClose={() => setIsWithdrawalOpen(false)} onConfirm={() => void handleWithdrawal()} />}
     </div>
   );
 }

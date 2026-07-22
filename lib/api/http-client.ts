@@ -1,4 +1,7 @@
 import { getApiUrl } from "@/lib/api/config";
+import { logger, sanitizeUrl } from "@/lib/logging";
+
+const httpLogger = logger.child("api.http");
 
 export interface ApiErrorBody {
   code?: string;
@@ -23,6 +26,11 @@ async function fetchApi(input: RequestInfo | URL, init?: RequestInit) {
     return await fetch(input, init);
   } catch (error) {
     if (error instanceof DOMException && error.name === "AbortError") throw error;
+    const requestUrl = input instanceof Request ? input.url : input.toString();
+    httpLogger.error("network_request_failed", error, {
+      method: init?.method ?? (input instanceof Request ? input.method : "GET"),
+      path: sanitizeUrl(requestUrl),
+    });
     throw new ApiError(0, "NETWORK_ERROR", "서버에 연결하지 못했어요.");
   }
 }
@@ -67,6 +75,7 @@ async function refreshSession() {
     const body = await readErrorBody(response);
     if (body?.code === "CSRF_TOKEN_MISSING" || body?.code === "CSRF_TOKEN_INVALID") {
       await refreshCsrfToken();
+      httpLogger.debug("csrf_token_refreshed", { path: "/api/auth/refresh" });
       response = await execute();
     }
   }
@@ -94,13 +103,17 @@ export async function apiRequest<T>(path: string, init: RequestInit = {}): Promi
     const body = await readErrorBody(response);
     if (body?.code === "CSRF_TOKEN_MISSING" || body?.code === "CSRF_TOKEN_INVALID") {
       await refreshCsrfToken();
+      httpLogger.debug("csrf_token_refreshed", { path: sanitizeUrl(getApiUrl(path)) });
       response = await execute();
     }
   }
 
   if (response.status === 401 && path !== "/api/auth/refresh") {
     const refreshResponse = await refreshSession();
-    if (refreshResponse.ok) response = await execute();
+    if (refreshResponse.ok) {
+      httpLogger.debug("auth_session_refreshed", { path: sanitizeUrl(getApiUrl(path)) });
+      response = await execute();
+    }
   }
 
   if (!response.ok) {
@@ -110,11 +123,25 @@ export async function apiRequest<T>(path: string, init: RequestInit = {}): Promi
     } catch {
       body = undefined;
     }
-    throw new ApiError(
+    const apiError = new ApiError(
       response.status,
       body?.code ?? `HTTP_${response.status}`,
       body?.message ?? "요청을 처리하지 못했어요.",
     );
+    const context = {
+      method,
+      path: sanitizeUrl(getApiUrl(path)),
+      status: response.status,
+      code: apiError.code,
+    };
+    if (response.status >= 500) {
+      httpLogger.error("api_server_error", new Error(`API request failed with status ${response.status}`), context);
+    } else if (response.status === 401 || response.status === 403) {
+      httpLogger.warn("api_authorization_failed", context);
+    } else {
+      httpLogger.debug("api_request_rejected", context);
+    }
+    throw apiError;
   }
 
   if (response.status === 204) return undefined as T;

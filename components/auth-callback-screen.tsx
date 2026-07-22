@@ -5,10 +5,13 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { SocialIcon } from "@/components/social-icon";
 import { authApi, type AuthResult } from "@/lib/api/auth-api";
-import { getApiUrl } from "@/lib/api/config";
+import { resolveApiUrl } from "@/lib/api/config";
+import { logger } from "@/lib/logging";
 import type { SocialProvider } from "@/lib/types";
 import { useAuthStore } from "@/store/auth-store";
 import { useToastStore } from "@/store/toast-store";
+
+const authLogger = logger.child("auth.callback");
 
 const providerLabel: Record<SocialProvider, string> = {
   NAVER: "네이버",
@@ -18,11 +21,6 @@ const providerLabel: Record<SocialProvider, string> = {
 
 function isAuthResult(value: string | null): value is AuthResult {
   return ["SUCCESS", "SIGNUP_REQUIRED", "LINK_REQUIRED", "LINK_SUCCESS", "LINK_FAILED", "FAILED"].includes(value ?? "");
-}
-
-function resolveAuthorizationUrl(url: string) {
-  if (/^https?:\/\//i.test(url)) return url;
-  return getApiUrl(url);
 }
 
 export function AuthCallbackScreen() {
@@ -43,25 +41,34 @@ export function AuthCallbackScreen() {
 
     void authApi.getMe().then((session) => {
       if ((result === "SUCCESS" || result === "LINK_SUCCESS") && session.authenticated && session.user) {
+        authLogger.info("authentication_completed", { result });
         setServerUser(session.user);
         showToast(result === "LINK_SUCCESS" ? "소셜 계정을 연동했어요." : "로그인했어요.", "SUCCESS");
-        router.replace("/");
+        router.replace(result === "LINK_SUCCESS" ? "/mypage" : "/");
         return;
       }
       if (result === "SIGNUP_REQUIRED" && session.pendingAuth) {
+        authLogger.info("signup_required", { provider: session.pendingAuth.provider });
         setPendingSignupProvider(session.pendingAuth.provider, session.pendingAuth.email);
         router.replace("/signup");
         return;
       }
       if (result === "LINK_REQUIRED" && session.pendingAuth) {
+        authLogger.info("account_link_required", { provider: session.pendingAuth.provider });
         setPendingLink(session.pendingAuth);
         return;
       }
 
       const code = searchParams.get("code");
+      if (code === "OAUTH_CANCELLED") {
+        authLogger.info("authentication_cancelled", { result });
+      } else {
+        authLogger.warn("authentication_failed", { result, code: code ?? "UNKNOWN" });
+      }
       showToast(code === "OAUTH_CANCELLED" ? "소셜 로그인을 취소했어요." : "소셜 로그인을 완료하지 못했어요.", result === "LINK_FAILED" ? "ERROR" : "INFO");
       router.replace("/");
-    }).catch(() => {
+    }).catch((error) => {
+      authLogger.error("session_confirmation_failed", error, { result });
       showToast("로그인 상태를 확인하지 못했어요.", "ERROR");
       router.replace("/");
     });
@@ -71,8 +78,9 @@ export function AuthCallbackScreen() {
     setIsSubmitting(true);
     try {
       const { authorizationUrl } = await authApi.consentToLink();
-      window.location.assign(resolveAuthorizationUrl(authorizationUrl));
-    } catch {
+      window.location.assign(resolveApiUrl(authorizationUrl));
+    } catch (error) {
+      authLogger.error("link_consent_failed", error);
       setIsSubmitting(false);
       showToast("계정 연동을 시작하지 못했어요.", "ERROR");
     }
@@ -82,7 +90,8 @@ export function AuthCallbackScreen() {
     setIsSubmitting(true);
     try {
       await authApi.cancelLink();
-    } catch {
+    } catch (error) {
+      authLogger.warn("link_cancel_failed", { reason: error instanceof Error ? error.name : "unknown" });
       showToast("계정 연동 취소 상태를 반영하지 못했어요.", "ERROR");
     } finally {
       router.replace("/");
