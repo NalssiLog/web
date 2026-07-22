@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { Check, LoaderCircle, X } from "lucide-react";
-import { checkNicknameAvailability } from "@/lib/api/mock-user-api";
+import { authApi } from "@/lib/api/auth-api";
 import { getTextLength } from "@/lib/text";
 
 type CheckState = "IDLE" | "CHECKING" | "AVAILABLE" | "TAKEN";
@@ -17,10 +17,11 @@ export function NicknameEditModal({
 }: {
   currentNickname: string;
   onClose: () => void;
-  onSave: (nickname: string) => void;
+  onSave: (nickname: string) => void | Promise<void>;
 }) {
   const [nickname, setNickname] = useState(currentNickname);
   const [checkState, setCheckState] = useState<CheckState>("IDLE");
+  const [isSaving, setIsSaving] = useState(false);
   const checkTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const checkRequestRef = useRef(0);
   const normalizedNickname = nickname.trim();
@@ -46,15 +47,26 @@ export function NicknameEditModal({
 
     setCheckState("CHECKING");
     checkTimerRef.current = setTimeout(async () => {
-      const available = await checkNicknameAvailability(nextNickname, currentNickname);
-      if (requestId !== checkRequestRef.current) return;
-      setCheckState(available ? "AVAILABLE" : "TAKEN");
+      try {
+        const available = nextNickname === currentNickname
+          ? true
+          : (await authApi.checkNickname(nextNickname)).available;
+        if (requestId !== checkRequestRef.current) return;
+        setCheckState(available ? "AVAILABLE" : "TAKEN");
+      } catch {
+        if (requestId === checkRequestRef.current) setCheckState("IDLE");
+      }
     }, 350);
   };
 
-  const save = () => {
+  const save = async () => {
     if (checkState !== "AVAILABLE") return;
-    onSave(normalizedNickname);
+    setIsSaving(true);
+    try {
+      await onSave(normalizedNickname);
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   return (
@@ -114,7 +126,7 @@ export function NicknameEditModal({
           </div>
         </div>
 
-        <button type="button" disabled={checkState !== "AVAILABLE"} onClick={save} className="mt-4 w-full rounded-2xl bg-[#45ace4] py-3.5 text-sm font-extrabold text-white transition hover:bg-[#299bd8] disabled:cursor-not-allowed disabled:bg-[#b9d5e4]">변경하기</button>
+        <button type="button" disabled={checkState !== "AVAILABLE" || isSaving} onClick={() => void save()} className="mt-4 w-full rounded-2xl bg-[#45ace4] py-3.5 text-sm font-extrabold text-white transition hover:bg-[#299bd8] disabled:cursor-not-allowed disabled:bg-[#b9d5e4]">{isSaving ? "변경하는 중…" : "변경하기"}</button>
       </div>
     </div>
   );

@@ -9,10 +9,13 @@ export function useCurrentLocation() {
   const { location, setLocation, hasAttemptedDetection, markDetectionAttempted } = useLocationStore();
   const [isDetecting, setIsDetecting] = useState(false);
   const [needsManualInput, setNeedsManualInput] = useState(false);
+  const [detectionError, setDetectionError] = useState("");
 
   const detectLocation = useCallback((applyImmediately = false): Promise<Location | null> => {
     markDetectionAttempted();
+    setDetectionError("");
     if (!navigator.geolocation) {
+      setDetectionError("이 브라우저에서는 현재 위치를 사용할 수 없어요.");
       setNeedsManualInput(true);
       return Promise.resolve(null);
     }
@@ -28,14 +31,18 @@ export function useCurrentLocation() {
             }
             resolve(result);
           } catch {
+            setDetectionError("위치 서버에 연결하지 못했어요. 다시 시도하거나 동네를 검색해 주세요.");
             setNeedsManualInput(true);
             resolve(null);
           } finally {
             setIsDetecting(false);
           }
         },
-        () => {
+        (error) => {
           setIsDetecting(false);
+          setDetectionError(error.code === error.PERMISSION_DENIED
+            ? "위치 권한이 없어 현재 동네를 찾지 못했어요. 동네를 직접 검색해 주세요."
+            : "현재 위치를 확인하지 못했어요. 다시 시도하거나 동네를 검색해 주세요.");
           setNeedsManualInput(true);
           resolve(null);
         },
@@ -50,5 +57,5 @@ export function useCurrentLocation() {
     return () => window.clearTimeout(timeout);
   }, [detectLocation, hasAttemptedDetection, location]);
 
-  return { location, setLocation, isDetecting, needsManualInput, setNeedsManualInput, detectLocation };
+  return { location, setLocation, isDetecting, detectionError, needsManualInput, setNeedsManualInput, detectLocation };
 }

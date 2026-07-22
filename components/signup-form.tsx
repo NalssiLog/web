@@ -4,8 +4,7 @@ import { ArrowLeft, Check, LoaderCircle } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { SocialIcon } from "@/components/social-icon";
-import { checkNicknameAvailability } from "@/lib/api/mock-user-api";
-import { MOCK_SOCIAL_PROFILES } from "@/lib/constants";
+import { authApi } from "@/lib/api/auth-api";
 import { getTextLength } from "@/lib/text";
 import type { SocialProvider } from "@/lib/types";
 import { useAuthStore } from "@/store/auth-store";
@@ -26,8 +25,10 @@ const isNicknameValid = (value: string) => value === value.trim() && nicknamePat
 export function SignupForm() {
   const router = useRouter();
   const user = useAuthStore((state) => state.user);
+  const hasCheckedServerSession = useAuthStore((state) => state.hasCheckedServerSession);
   const provider = useAuthStore((state) => state.pendingSignupProvider);
-  const signup = useAuthStore((state) => state.signup);
+  const pendingEmail = useAuthStore((state) => state.pendingSignupEmail);
+  const setServerUser = useAuthStore((state) => state.setServerUser);
   const setPendingSignupProvider = useAuthStore((state) => state.setPendingSignupProvider);
   const openLegalDocument = useLegalModalStore((state) => state.openLegalDocument);
   const showToast = useToastStore((state) => state.showToast);
@@ -36,6 +37,7 @@ export function SignupForm() {
   const [checkState, setCheckState] = useState<CheckState>("IDLE");
   const [privacyAgreed, setPrivacyAgreed] = useState(false);
   const [termsAgreed, setTermsAgreed] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const checkTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const checkRequestRef = useRef(0);
   const isNameValid = getTextLength(name.trim()) > 0 && getTextLength(name.trim()) <= 30;
@@ -43,8 +45,8 @@ export function SignupForm() {
   const canSubmit = Boolean(provider && isNameValid && checkState === "AVAILABLE" && privacyAgreed && termsAgreed);
 
   useEffect(() => {
-    if (!provider) router.replace(user.type === "MEMBER" ? "/mypage" : "/");
-  }, [provider, router, user.type]);
+    if (hasCheckedServerSession && !provider) router.replace(user.type === "MEMBER" ? "/mypage" : "/");
+  }, [hasCheckedServerSession, provider, router, user.type]);
 
   useEffect(() => () => {
     if (checkTimerRef.current) clearTimeout(checkTimerRef.current);
@@ -64,9 +66,13 @@ export function SignupForm() {
 
     setCheckState("CHECKING");
     checkTimerRef.current = setTimeout(async () => {
-      const available = await checkNicknameAvailability(value, "");
-      if (requestId !== checkRequestRef.current) return;
-      setCheckState(available ? "AVAILABLE" : "TAKEN");
+      try {
+        const available = (await authApi.checkNickname(value)).available;
+        if (requestId !== checkRequestRef.current) return;
+        setCheckState(available ? "AVAILABLE" : "TAKEN");
+      } catch {
+        if (requestId === checkRequestRef.current) setCheckState("IDLE");
+      }
     }, 350);
   };
 
@@ -75,14 +81,33 @@ export function SignupForm() {
     router.replace("/");
   };
 
-  const submit = () => {
+  const submit = async () => {
     if (!provider || !canSubmit) return;
-    signup(provider, name.trim(), nickname.trim());
-    showToast("회원가입이 완료됐어요.", "SUCCESS");
-    router.replace("/");
+    setIsSubmitting(true);
+    try {
+      await authApi.signup({
+        name: name.trim(),
+        nickname: nickname.trim(),
+        agreedTerms: [
+          { type: "SERVICE", version: "1.0" },
+          { type: "PRIVACY", version: "1.0" },
+        ],
+      });
+      const session = await authApi.getMe();
+      if (!session.authenticated || !session.user) throw new Error("회원가입 후 로그인 상태가 없어요.");
+      setServerUser(session.user);
+      setPendingSignupProvider(undefined);
+      showToast("회원가입이 완료됐어요.", "SUCCESS");
+      router.replace("/");
+    } catch (error) {
+      setIsSubmitting(false);
+      showToast(error instanceof Error ? error.message : "회원가입을 완료하지 못했어요.", "ERROR");
+    }
   };
 
-  if (!provider) return null;
+  if (!provider) return !hasCheckedServerSession
+    ? <main className="min-h-[75dvh] px-5 pt-24" aria-busy="true"><div className="skeleton mx-auto h-6 w-24 rounded" /><div className="skeleton mt-8 h-28 rounded-[22px]" /><div className="skeleton mt-3 h-64 rounded-[22px]" /></main>
+    : null;
 
   return (
     <main className="min-h-screen pb-10">
@@ -99,7 +124,7 @@ export function SignupForm() {
             <SocialIcon provider={provider} className="size-11" />
             <div className="min-w-0">
               <p className="text-sm font-extrabold">{providerLabel[provider]} 계정</p>
-              <p className="mt-0.5 truncate text-xs font-semibold text-[#718594]">{MOCK_SOCIAL_PROFILES[provider].email}</p>
+              <p className="mt-0.5 truncate text-xs font-semibold text-[#718594]">{pendingEmail ?? "이메일 정보 없음"}</p>
             </div>
           </div>
         </section>
@@ -172,7 +197,7 @@ export function SignupForm() {
           </div>
         </section>
 
-        <button type="submit" disabled={!canSubmit} className="mt-5 w-full rounded-2xl bg-[#45ace4] py-4 text-sm font-extrabold text-white transition hover:bg-[#299bd8] disabled:cursor-not-allowed disabled:bg-[#b9d5e4]">회원가입 완료</button>
+        <button type="submit" disabled={!canSubmit || isSubmitting} className="mt-5 w-full rounded-2xl bg-[#45ace4] py-4 text-sm font-extrabold text-white transition hover:bg-[#299bd8] disabled:cursor-not-allowed disabled:bg-[#b9d5e4]">{isSubmitting ? "가입하는 중…" : "회원가입 완료"}</button>
       </form>
     </main>
   );

@@ -11,9 +11,11 @@ import type { WeatherReport } from "@/lib/types";
 export function ReportCard({ report, compact = false }: { report: WeatherReport; compact?: boolean }) {
   const ago = formatDistanceToNow(new Date(report.createdAt), { addSuffix: true, locale: ko }).replace("약 ", "");
   const compactDate = format(new Date(report.createdAt), "yy.MM.dd");
+  const imageSource = report.images[0] ?? DEFAULT_REPORT_IMAGE;
+  const unoptimizedImage = /^(https?:|blob:|data:)/.test(imageSource);
   return (
     <Link href={`/reports/${report.id}`} className={`group relative aspect-square overflow-hidden bg-[#e8f3f8] ${compact ? "rounded-lg" : "rounded-[22px]"}`}>
-      <Image src={report.images[0] ?? DEFAULT_REPORT_IMAGE} alt={`${report.location.label} 날씨 제보`} fill sizes="(max-width: 480px) 50vw, 220px" className="object-cover transition duration-300 group-active:scale-105" />
+      <Image src={imageSource} alt={`${report.location.label} 날씨 제보`} fill unoptimized={unoptimizedImage} sizes="(max-width: 480px) 50vw, 220px" className="object-cover transition duration-300 group-active:scale-105" />
       {!compact && <>
         <div className="absolute inset-x-0 bottom-0 h-2/3 bg-gradient-to-t from-[#102839]/80 via-[#102839]/10 to-transparent" />
         <div className="absolute inset-x-0 bottom-0 flex items-end justify-between gap-2 p-3.5 text-white">
