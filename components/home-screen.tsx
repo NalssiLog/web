@@ -69,6 +69,7 @@ export function HomeScreen() {
   const hasReportData = Boolean(reports.data);
   const hasWeatherData = hasSummaryData || hasReportData;
   const hasWeatherError = summary.isError || reports.isError;
+  const showLocationError = !location && !isDetecting && Boolean(detectionError);
   const isInitialWeatherLoading = !locationLabel || (!hasWeatherData && (summary.isPending || reports.isPending));
   const showFullWeatherError = Boolean(locationLabel) && !hasWeatherData && hasWeatherError && !summary.isPending && !reports.isPending;
   const openUserArea = () => {
@@ -79,7 +80,7 @@ export function HomeScreen() {
     <div className={`page ${isFooterReached ? "home-footer-reached" : ""}`}>
       <AppHeader location={locationLabel} isDetecting={isDetecting && !needsManualInput} onLocationClick={() => setNeedsManualInput(true)} onUserClick={openUserArea} />
       {hasWeatherData && hasWeatherError && <ConnectionNotice onRetry={refreshWeather} isRetrying={summary.isFetching || reports.isFetching} />}
-      {showFullWeatherError ? <ErrorState onRetry={refreshWeather} /> : <>
+      {showLocationError ? <ErrorState message="현재 동네를 불러오지 못했어요." actionLabel="동네 선택하기" onRetry={() => setNeedsManualInput(true)} /> : showFullWeatherError ? <ErrorState onRetry={refreshWeather} /> : <>
         {summary.data
           ? <WeatherSummary summary={summary.data} updatedAt={summary.dataUpdatedAt} isRefreshing={summary.isFetching || reports.isRefetching} onRefresh={refreshWeather} />
           : isInitialWeatherLoading || (!summary.isError && summary.isPending)
@@ -98,7 +99,7 @@ export function HomeScreen() {
       </div>
       <div ref={footerBoundaryRef} className="h-px" aria-hidden="true" />
       <div className={isFooterReached ? "home-cta-inline" : "mobile-fixed"}><Link href="/reports/new" className="primary-button"><Camera size={20} strokeWidth={2.4} /> 지금 날씨 제보하기</Link></div>
-      <LocationPicker open={needsManualInput} current={locationLabel} isDetecting={isDetecting} detectionError={detectionError} required={!location} onClose={() => setNeedsManualInput(false)} onDetect={detectLocation} onSelect={(next) => { setLocation(next); setNeedsManualInput(false); showToast(`${next.label} 날씨로 이동했어요.`, "INFO"); }} />
+      <LocationPicker open={needsManualInput} current={locationLabel} isDetecting={isDetecting} detectionError={detectionError} required={false} onClose={() => setNeedsManualInput(false)} onDetect={detectLocation} onSelect={(next) => { setLocation(next); setNeedsManualInput(false); showToast(`${next.label} 날씨로 이동했어요.`, "INFO"); }} />
       <UserPanel open={isUserPanelOpen} onClose={() => setIsUserPanelOpen(false)} />
     </div>
   );

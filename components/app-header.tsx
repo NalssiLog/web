@@ -11,8 +11,8 @@ export function AppHeader({ location, isDetecting, onLocationClick, onUserClick 
         <span className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-white text-[#45ace4] shadow-sm shadow-[#b8d6e6]/20">
           <MapPin size={19} />
         </span>
-        {isDetecting || !location ? <span className="skeleton h-5 w-40 rounded" aria-label="현재 위치 불러오는 중" /> : <span className="flex min-w-0 items-center gap-1 text-[19px] font-extrabold">
-          <span className="truncate">{location}</span>
+        {isDetecting ? <span className="skeleton h-5 w-40 rounded" aria-label="현재 위치 불러오는 중" /> : <span className="flex min-w-0 items-center gap-1 text-[19px] font-extrabold">
+          <span className="truncate">{location || "동네를 선택해 주세요"}</span>
           <ChevronDown size={18} className="shrink-0 text-[#8ba0ae] transition group-hover:translate-y-0.5" />
         </span>}
       </button>
