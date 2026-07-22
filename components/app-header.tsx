@@ -11,10 +11,10 @@ export function AppHeader({ location, isDetecting, onLocationClick, onUserClick 
         <span className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-white text-[#45ace4] shadow-sm shadow-[#b8d6e6]/20">
           <MapPin size={19} />
         </span>
-        <span className="flex items-center gap-1 text-[19px] font-extrabold">
-          {isDetecting ? "위치를 찾는 중…" : location ?? "위치를 설정해 주세요"}
-          <ChevronDown size={18} className="text-[#8ba0ae] transition group-hover:translate-y-0.5" />
-        </span>
+        {isDetecting || !location ? <span className="skeleton h-5 w-40 rounded" aria-label="현재 위치 불러오는 중" /> : <span className="flex min-w-0 items-center gap-1 text-[19px] font-extrabold">
+          <span className="truncate">{location}</span>
+          <ChevronDown size={18} className="shrink-0 text-[#8ba0ae] transition group-hover:translate-y-0.5" />
+        </span>}
       </button>
       {isMember ? <button type="button" onClick={onUserClick} className="flex size-11 items-center justify-center rounded-2xl bg-white text-[#718594] shadow-sm shadow-[#b8d6e6]/20 transition hover:text-[#268fc7]" aria-label="사용자 메뉴"><UserRound size={23} /></button> : <button type="button" onClick={onUserClick} className="flex h-11 items-center justify-center rounded-2xl bg-white px-4 text-sm font-extrabold text-[#268fc7] shadow-sm shadow-[#b8d6e6]/20 transition hover:bg-[#f8fcfe]" aria-label="로그인">로그인</button>}
     </header>

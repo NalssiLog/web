@@ -1,20 +1,22 @@
 import type {
   CreateReportInput,
+  CreateReportOptions,
   Location,
   MemberProfile,
   ReportPage,
   WeatherReport,
   WeatherSummary,
+  ThanksState,
 } from "@/lib/types";
 
 export interface WeatherApi {
-  getSummary(location: string): Promise<WeatherSummary>;
-  getReports(location: string, cursor?: string): Promise<ReportPage>;
-  getMyReports(): Promise<WeatherReport[]>;
+  getSummary(location: Location): Promise<WeatherSummary>;
+  getReports(location: Location, cursor?: string): Promise<ReportPage>;
+  getMyReports(cursor?: string): Promise<ReportPage>;
   getMemberProfile(id: string): Promise<MemberProfile>;
-  getMemberReports(id: string): Promise<WeatherReport[]>;
+  getMemberReports(id: string, cursor?: string): Promise<ReportPage>;
   getReport(id: string): Promise<WeatherReport>;
-  createReport(input: CreateReportInput): Promise<WeatherReport>;
-  toggleHelpful(id: string): Promise<WeatherReport>;
+  createReport(input: CreateReportInput, options?: CreateReportOptions): Promise<WeatherReport>;
+  toggleThanks(id: string, isThanked: boolean): Promise<ThanksState>;
   reverseGeocode(latitude: number, longitude: number): Promise<Location>;
 }

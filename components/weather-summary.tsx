@@ -6,6 +6,9 @@ import { PRECIPITATION_OPTIONS, SUNLIGHT_OPTIONS, TEMPERATURE_OPTIONS, statusLab
 import type { WeatherSummary as Summary } from "@/lib/types";
 
 export function WeatherSummary({ summary, updatedAt, isRefreshing, onRefresh }: { summary: Summary; updatedAt: number; isRefreshing: boolean; onRefresh: () => void }) {
+  const temperature = summary.temperature;
+  const precipitation = summary.precipitation;
+  const sunlight = summary.sunlight;
   return (
     <section className="mb-5">
       <div className="mb-2 flex items-center gap-0.5">
@@ -15,9 +18,29 @@ export function WeatherSummary({ summary, updatedAt, isRefreshing, onRefresh }: 
         </button>
       </div>
       <div className="grid grid-cols-3 gap-2">
-        <SummaryItem icon={<Thermometer size={21} />} label="체감온도" value={statusLabel(TEMPERATURE_OPTIONS, summary.temperature)} tone={temperatureTone[summary.temperature]} />
-        <SummaryItem icon={<CloudRain size={21} />} label="강수" value={statusLabel(PRECIPITATION_OPTIONS, summary.precipitation)} tone={precipitationTone[summary.precipitation]} />
-        <SummaryItem icon={<Sun size={21} />} label="햇빛" value={statusLabel(SUNLIGHT_OPTIONS, summary.sunlight)} tone={sunlightTone[summary.sunlight]} />
+        <SummaryItem icon={<Thermometer size={21} />} label="체감온도" value={temperature ? statusLabel(TEMPERATURE_OPTIONS, temperature) : "제보 없음"} tone={temperature ? temperatureTone[temperature] : emptyTone} />
+        <SummaryItem icon={<CloudRain size={21} />} label="강수" value={precipitation ? statusLabel(PRECIPITATION_OPTIONS, precipitation) : "제보 없음"} tone={precipitation ? precipitationTone[precipitation] : emptyTone} />
+        <SummaryItem icon={<Sun size={21} />} label="햇빛" value={sunlight ? statusLabel(SUNLIGHT_OPTIONS, sunlight) : "제보 없음"} tone={sunlight ? sunlightTone[sunlight] : emptyTone} />
+      </div>
+    </section>
+  );
+}
+
+export function WeatherSummarySkeleton() {
+  return (
+    <section className="mb-5" aria-busy="true" aria-label="동네 날씨 통계 불러오는 중">
+      <div className="mb-2 flex h-5 items-center gap-1">
+        <span className="skeleton h-3 w-20 rounded" />
+        <span className="skeleton size-4 rounded-full" />
+      </div>
+      <div className="grid grid-cols-3 gap-2">
+        {Array.from({ length: 3 }).map((_, index) => (
+          <div key={index} className="flex min-h-24 flex-col items-center justify-center rounded-[18px] bg-white px-2 shadow-sm shadow-[#b8d6e6]/20">
+            <span className="skeleton size-5 rounded-md" />
+            <span className={`skeleton mt-2 h-3.5 rounded ${index === 0 ? "w-14" : "w-10"}`} />
+            <span className="skeleton mt-2 h-4 w-14 rounded-full" />
+          </div>
+        ))}
       </div>
     </section>
   );
@@ -40,6 +63,8 @@ const sunlightTone = {
   MODERATE: "bg-[#fff7dc] text-[#a8791e]",
   STRONG: "bg-[#fff0d9] text-[#c66d19]",
 } as const;
+
+const emptyTone = "bg-[#edf3f6] text-[#718594]";
 
 function SummaryItem({ icon, label, value, tone }: { icon: ReactNode; label: string; value: string; tone: string }) {
   return (

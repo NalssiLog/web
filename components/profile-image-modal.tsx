@@ -12,15 +12,22 @@ export function ProfileImageModal({
 }: {
   current?: string;
   onClose: () => void;
-  onChange: (avatarUrl?: string) => void;
+  onChange: (avatarUrl?: string) => boolean | void | Promise<boolean | void>;
 }) {
   const showToast = useToastStore((state) => state.showToast);
   const [selectedProfile, setSelectedProfile] = useState(current);
 
-  const saveProfile = () => {
-    onChange(selectedProfile);
-    showToast("프로필 사진을 변경했어요.", "SUCCESS");
-    onClose();
+  const [isSaving, setIsSaving] = useState(false);
+
+  const saveProfile = async () => {
+    setIsSaving(true);
+    try {
+      const saved = await onChange(selectedProfile);
+      if (saved === false) return;
+      onClose();
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   const uploadImage = (event: ChangeEvent<HTMLInputElement>) => {
@@ -79,7 +86,7 @@ export function ProfileImageModal({
             <input type="file" accept="image/jpeg,image/png,image/webp" onChange={uploadImage} className="sr-only" />
           </label>
         </div>
-        <button type="button" disabled={selectedProfile === current} onClick={saveProfile} className="mt-3 w-full rounded-2xl bg-[#45ace4] py-3.5 text-sm font-extrabold text-white transition hover:bg-[#299bd8] disabled:cursor-not-allowed disabled:bg-[#b9d5e4]">저장</button>
+        <button type="button" disabled={selectedProfile === current || isSaving} onClick={() => void saveProfile()} className="mt-3 w-full rounded-2xl bg-[#45ace4] py-3.5 text-sm font-extrabold text-white transition hover:bg-[#299bd8] disabled:cursor-not-allowed disabled:bg-[#b9d5e4]">{isSaving ? "저장하는 중…" : "저장"}</button>
       </div>
     </div>
   );

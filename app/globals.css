@@ -33,7 +33,9 @@ button { cursor: pointer; }
   box-shadow: 0 0 48px rgba(48, 98, 126, .12);
 }
 .page { min-height: 100vh; padding: 0 20px 112px; }
+.page.home-footer-reached { padding-bottom: 0; }
 .safe-top { padding-top: max(24px, env(safe-area-inset-top)); }
+.home-cta-inline { padding: 14px 0 18px; }
 .mobile-fixed {
   position: fixed;
   z-index: 30;
@@ -73,6 +75,18 @@ button { cursor: pointer; }
   color: var(--ink);
   background: white;
 }
+.legal-content { color: #526a7a; font-size: 13px; font-weight: 500; line-height: 1.75; }
+.legal-content section + section { margin-top: 28px; }
+.legal-content h2 { margin: 0 0 10px; color: var(--ink); font-size: 15px; font-weight: 800; }
+.legal-content h3 { margin: 16px 0 6px; color: #29495c; font-size: 13px; font-weight: 800; }
+.legal-content p { margin: 0; }
+.legal-content p + p { margin-top: 8px; }
+.legal-content ul, .legal-content ol { margin: 8px 0 0; padding-left: 20px; }
+.legal-content ul { list-style: disc; }
+.legal-content ol { list-style: decimal; }
+.legal-content li::marker { color: var(--sky-600); font-weight: 700; }
+.legal-content li + li { margin-top: 6px; }
+.legal-content a { color: var(--sky-600); font-weight: 700; text-decoration: underline; text-underline-offset: 2px; }
 .skeleton { overflow: hidden; background: #eaf2f6; animation: pulse 1.5s ease-in-out infinite; }
 @keyframes pulse { 50% { opacity: .55; } }
 @keyframes toast-in {

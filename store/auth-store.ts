@@ -1,114 +1,58 @@
 "use client";
 
 import { create } from "zustand";
-import { persist } from "zustand/middleware";
-import { DEFAULT_PROFILE_IMAGES } from "@/lib/constants";
-import type { CurrentUser, SocialProvider } from "@/lib/types";
+import { resolveProfileImage } from "@/lib/constants";
+import type { AvatarType, CurrentUser, SocialProvider } from "@/lib/types";
 
-type MemberUser = Extract<CurrentUser, { type: "MEMBER" }>;
-type MemberProfiles = Partial<Record<SocialProvider, MemberUser>>;
+interface ServerUser {
+  id: string;
+  nickname: string;
+  profileImageUrl?: string | null;
+  avatar?: { type: AvatarType; value: string | null };
+}
 
 interface AuthState {
   user: CurrentUser;
-  memberProfiles: MemberProfiles;
-  login: (provider: SocialProvider) => void;
+  pendingSignupProvider?: SocialProvider;
+  pendingSignupEmail?: string;
+  hasCheckedServerSession: boolean;
+  setPendingSignupProvider: (provider?: SocialProvider, email?: string) => void;
+  setServerUser: (user?: ServerUser) => void;
   logout: () => void;
-  withdraw: () => void;
   setProfileImage: (avatarUrl?: string) => void;
   setNickname: (nickname: string) => void;
-  setSocialProviderLinked: (provider: SocialProvider, linked: boolean) => void;
 }
 
 const anonymousUser: CurrentUser = { type: "ANONYMOUS" };
 
-const providerProfile: Record<SocialProvider, { email: string; nickname: string }> = {
-  NAVER: { email: "weather-neighbor@naver.com", nickname: "초록이웃" },
-  KAKAO: { email: "weather-neighbor@kakao.com", nickname: "노란이웃" },
-  GOOGLE: { email: "weather-neighbor@gmail.com", nickname: "구름이웃" },
-};
-
-const randomDefaultProfile = () =>
-  DEFAULT_PROFILE_IMAGES[Math.floor(Math.random() * DEFAULT_PROFILE_IMAGES.length)].src;
-
-const withSavedMember = (memberProfiles: MemberProfiles, user: MemberUser) => ({
-  ...memberProfiles,
-  [user.provider]: user,
-});
-
-export const useAuthStore = create<AuthState>()(
-  persist(
-    (set) => ({
-      user: anonymousUser,
-      memberProfiles: {},
-      login: (provider) => {
-        set((state) => {
-          const savedProfile = state.memberProfiles[provider];
-          const user: MemberUser = savedProfile ?? {
-            type: "MEMBER",
-            id: `mock-${provider.toLowerCase()}`,
-            provider,
-            linkedProviders: [provider],
-            avatarUrl: randomDefaultProfile(),
-            ...providerProfile[provider],
-          };
-          return {
-            user,
-            memberProfiles: savedProfile
-              ? state.memberProfiles
-              : withSavedMember(state.memberProfiles, user),
-          };
-        });
-      },
-      logout: () =>
-        set((state) => ({
-          user: anonymousUser,
-          memberProfiles: state.user.type === "MEMBER"
-            ? withSavedMember(state.memberProfiles, state.user)
-            : state.memberProfiles,
-        })),
-      withdraw: () =>
-        set((state) => {
-          if (state.user.type !== "MEMBER") return { user: anonymousUser };
-          const memberProfiles = { ...state.memberProfiles };
-          delete memberProfiles[state.user.provider];
-          return { user: anonymousUser, memberProfiles };
-        }),
-      setProfileImage: (avatarUrl) =>
-        set((state) => {
-          if (state.user.type !== "MEMBER") return state;
-          const user = { ...state.user, avatarUrl };
-          return { user, memberProfiles: withSavedMember(state.memberProfiles, user) };
-        }),
-      setNickname: (nickname) =>
-        set((state) => {
-          if (state.user.type !== "MEMBER") return state;
-          const user = { ...state.user, nickname };
-          return { user, memberProfiles: withSavedMember(state.memberProfiles, user) };
-        }),
-      setSocialProviderLinked: (provider, linked) =>
-        set((state) => {
-          if (state.user.type !== "MEMBER") return state;
-          const current = state.user.linkedProviders ?? [state.user.provider];
-          const linkedProviders = linked
-            ? Array.from(new Set([...current, provider]))
-            : current.filter((item) => item !== provider);
-          const user = { ...state.user, linkedProviders };
-          return { user, memberProfiles: withSavedMember(state.memberProfiles, user) };
-        }),
-    }),
-    {
-      name: "your-weather-auth",
-      version: 1,
-      migrate: (persistedState) => {
-        const state = persistedState as Partial<AuthState>;
-        const memberProfiles = state.memberProfiles ?? {};
-        if (state.user?.type !== "MEMBER") return { ...state, user: anonymousUser, memberProfiles };
-        const user: MemberUser = state.user.avatarUrl
-          ? state.user
-          : { ...state.user, avatarUrl: randomDefaultProfile() };
-        return { ...state, user, memberProfiles: withSavedMember(memberProfiles, user) };
-      },
-      partialize: (state) => ({ user: state.user, memberProfiles: state.memberProfiles }),
-    },
-  ),
-);
+export const useAuthStore = create<AuthState>((set) => ({
+  user: anonymousUser,
+  pendingSignupProvider: undefined,
+  pendingSignupEmail: undefined,
+  hasCheckedServerSession: false,
+  setPendingSignupProvider: (pendingSignupProvider, pendingSignupEmail) =>
+    set({ pendingSignupProvider, pendingSignupEmail }),
+  setServerUser: (serverUser) => set({
+    user: serverUser
+      ? {
+          type: "MEMBER",
+          id: serverUser.id,
+          nickname: serverUser.nickname,
+          avatarUrl: resolveProfileImage(serverUser.profileImageUrl ?? serverUser.avatar?.value),
+        }
+      : anonymousUser,
+    hasCheckedServerSession: true,
+  }),
+  logout: () => set({
+    user: anonymousUser,
+    pendingSignupProvider: undefined,
+    pendingSignupEmail: undefined,
+    hasCheckedServerSession: true,
+  }),
+  setProfileImage: (avatarUrl) => set((state) => ({
+    user: state.user.type === "MEMBER" ? { ...state.user, avatarUrl } : state.user,
+  })),
+  setNickname: (nickname) => set((state) => ({
+    user: state.user.type === "MEMBER" ? { ...state.user, nickname } : state.user,
+  })),
+}));

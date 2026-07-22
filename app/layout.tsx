@@ -1,9 +1,10 @@
 import type { Metadata, Viewport } from "next";
 import "./globals.css";
 import { Providers } from "@/app/providers";
+import { SiteFooter } from "@/components/site-footer";
 
 export const metadata: Metadata = {
-  title: "너의 날씨는",
+  title: "날씨로그",
   description: "우리 동네 사람들이 직접 전하는 지금 날씨",
 };
 
@@ -18,7 +19,10 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
     <html lang="ko">
       <body>
         <Providers>
-          <main className="app-shell">{children}</main>
+          <div className="app-shell">
+            {children}
+            <SiteFooter />
+          </div>
         </Providers>
       </body>
     </html>
