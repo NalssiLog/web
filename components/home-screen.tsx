@@ -72,6 +72,7 @@ export function HomeScreen() {
   const showLocationError = !location && !isDetecting && Boolean(detectionError);
   const isInitialWeatherLoading = !locationLabel || (!hasWeatherData && (summary.isPending || reports.isPending));
   const showFullWeatherError = Boolean(locationLabel) && !hasWeatherData && hasWeatherError && !summary.isPending && !reports.isPending;
+  const canCreateReport = Boolean(location && hasWeatherData && !hasWeatherError);
   const openUserArea = () => {
     if (isMember) router.push("/mypage");
     else setIsUserPanelOpen(true);
@@ -98,7 +99,7 @@ export function HomeScreen() {
         {reports.isFetchingNextPage ? "다음 날씨를 불러오는 중…" : !reports.hasNextPage && items.length > 0 ? "모든 날씨를 확인했어요" : null}
       </div>
       <div ref={footerBoundaryRef} className="h-px" aria-hidden="true" />
-      <div className={isFooterReached ? "home-cta-inline" : "mobile-fixed"}><Link href="/reports/new" className="primary-button"><Camera size={20} strokeWidth={2.4} /> 지금 날씨 제보하기</Link></div>
+      {canCreateReport && <div className={isFooterReached ? "home-cta-inline" : "mobile-fixed"}><Link href="/reports/new" className="primary-button"><Camera size={20} strokeWidth={2.4} /> 지금 날씨 제보하기</Link></div>}
       <LocationPicker open={needsManualInput} current={locationLabel} isDetecting={isDetecting} detectionError={detectionError} required={false} onClose={() => setNeedsManualInput(false)} onDetect={detectLocation} onSelect={(next) => { setLocation(next); setNeedsManualInput(false); showToast(`${next.label} 날씨로 이동했어요.`, "INFO"); }} />
       <UserPanel open={isUserPanelOpen} onClose={() => setIsUserPanelOpen(false)} />
     </div>
