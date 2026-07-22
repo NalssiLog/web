@@ -3,7 +3,7 @@ import { SERVICE_CONTACT_EMAIL } from "@/lib/constants";
 
 export function PrivacyPolicyContent() {
   return <>
-    <p>너의 날씨는 팀(이하 “서비스”)은 이용자의 개인정보를 중요하게 여기며, 개인정보 보호법 등 관련 법령에 따라 개인정보를 처리합니다. 이 방침은 서비스가 어떤 정보를 왜 처리하고 어떻게 보호하는지 설명합니다.</p>
+    <p>날씨로그 팀(이하 “서비스”)은 이용자의 개인정보를 중요하게 여기며, 개인정보 보호법 등 관련 법령에 따라 개인정보를 처리합니다. 이 방침은 서비스가 어떤 정보를 왜 처리하고 어떻게 보호하는지 설명합니다.</p>
 
     <LegalSection title="1. 처리하는 개인정보와 이용 목적">
       <h3>회원가입 및 계정 관리</h3>
@@ -69,7 +69,7 @@ export function PrivacyPolicyContent() {
 
     <LegalSection title="10. 개인정보 보호 문의">
       <ul>
-        <li>담당: 너의 날씨는 팀 개인정보 보호 담당</li>
+        <li>담당: 날씨로그 팀 개인정보 보호 담당</li>
         <li>이메일: <a href={`mailto:${SERVICE_CONTACT_EMAIL}`}>{SERVICE_CONTACT_EMAIL}</a></li>
       </ul>
       <p>개인정보 침해에 관한 상담이 필요한 경우 개인정보침해 신고센터 또는 개인정보분쟁조정위원회 등 관계 기관에 도움을 요청할 수 있습니다.</p>
@@ -83,7 +83,7 @@ export function PrivacyPolicyContent() {
 
 export function TermsContent() {
   return <>
-    <p>이 약관은 너의 날씨는 팀(이하 “운영자”)이 제공하는 너의 날씨는 서비스의 이용 조건과 운영자 및 이용자의 권리·의무를 정합니다.</p>
+    <p>이 약관은 날씨로그 팀(이하 “운영자”)이 제공하는 날씨로그 서비스의 이용 조건과 운영자 및 이용자의 권리·의무를 정합니다.</p>
 
     <LegalSection title="제1조 목적">
       <p>서비스는 같은 동네의 이용자가 직접 느낀 현재 날씨를 사진과 글로 공유하고 확인할 수 있도록 하는 것을 목적으로 합니다.</p>

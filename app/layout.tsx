@@ -4,7 +4,7 @@ import { Providers } from "@/app/providers";
 import { SiteFooter } from "@/components/site-footer";
 
 export const metadata: Metadata = {
-  title: "너의 날씨는",
+  title: "날씨로그",
   description: "우리 동네 사람들이 직접 전하는 지금 날씨",
 };
 
