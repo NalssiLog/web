@@ -42,10 +42,7 @@ export function NameEditModal({
         </div>
 
         <div className="mt-5 rounded-[18px] bg-white p-3.5">
-          <div className="flex items-center justify-between">
-            <label htmlFor="member-name" className="text-xs font-extrabold text-[#526a7a]">이름</label>
-            <span className="text-[11px] font-bold text-[#8ba0ae]">{nameLength}/30</span>
-          </div>
+          <label htmlFor="member-name" className="sr-only">이름</label>
           <input
             id="member-name"
             value={name}
@@ -62,9 +59,10 @@ export function NameEditModal({
                 void save();
               }
             }}
-            className="mt-2.5 w-full rounded-xl border border-[#dce8ee] px-3 py-2.5 text-sm font-bold outline-none transition focus:border-[#45ace4]"
+            className="w-full rounded-xl border border-[#dce8ee] px-3 py-2.5 text-sm font-bold outline-none transition focus:border-[#45ace4]"
             placeholder="이름 입력"
           />
+          <p className="mt-1.5 text-right text-[11px] font-bold text-[#8ba0ae]">{nameLength}/30</p>
           {name.length > 0 && !isValid && <p className="mt-2 text-xs font-bold text-[#c95e5e]">공백을 제외한 이름을 입력해 주세요.</p>}
         </div>
 

@@ -9,9 +9,10 @@ import { ChangeEvent, useEffect, useMemo, useRef, useState } from "react";
 import { useForm, useWatch } from "react-hook-form";
 import { z } from "zod";
 import { LocationPicker } from "@/components/location-picker";
+import { PhotoSourceSheet } from "@/components/photo-source-sheet";
 import { useCurrentLocation } from "@/hooks/use-current-location";
 import { weatherApi } from "@/lib/api";
-import { PRECIPITATION_OPTIONS, SUGGESTED_MESSAGES, SUNLIGHT_OPTIONS, TEMPERATURE_OPTIONS } from "@/lib/constants";
+import { PRECIPITATION_OPTIONS, SUGGESTED_MESSAGES, SUNLIGHT_OPTIONS, TEMPERATURE_OPTIONS, getLocationName } from "@/lib/constants";
 import { optimizeReportImage } from "@/lib/image";
 import { getTextLength, truncateText } from "@/lib/text";
 import type { CreateReportInput, Location, PrecipitationStatus, ReportUploadProgress, SunlightStatus, TemperatureStatus } from "@/lib/types";
@@ -50,12 +51,14 @@ function StatusField<T extends string>({ title, options, value, onChange }: { ti
 export function ReportForm() {
   const router = useRouter();
   const queryClient = useQueryClient();
-  const inputRef = useRef<HTMLInputElement>(null);
+  const galleryInputRef = useRef<HTMLInputElement>(null);
+  const cameraInputRef = useRef<HTMLInputElement>(null);
   const uploadControllerRef = useRef<AbortController | null>(null);
   const [step, setStep] = useState<1 | 2>(1);
   const [selectedReportLocation, setSelectedReportLocation] = useState<Location | null>(null);
   const [fileError, setFileError] = useState("");
   const [isOptimizingImages, setIsOptimizingImages] = useState(false);
+  const [isPhotoSourceOpen, setIsPhotoSourceOpen] = useState(false);
   const [uploadProgress, setUploadProgress] = useState<ReportUploadProgress | null>(null);
   const showToast = useToastStore((state) => state.showToast);
   const { location, setLocation, isDetecting, detectionError, needsManualInput, setNeedsManualInput, detectLocation } = useCurrentLocation();
@@ -105,18 +108,20 @@ export function ReportForm() {
   });
 
   const addImages = async (event: ChangeEvent<HTMLInputElement>) => {
-    const selected = Array.from(event.target.files ?? []);
+    const requested = Array.from(event.target.files ?? []);
     event.target.value = "";
+    const remainingSlots = Math.max(0, 3 - files.length);
+    const selected = requested.slice(0, remainingSlots);
+    if (requested.length > remainingSlots) {
+      showToast(`사진은 최대 3장까지 선택할 수 있어 먼저 선택한 ${remainingSlots}장만 추가해요.`, "INFO");
+    }
+    if (selected.length === 0) return;
     if (selected.some((file) => !ACCEPTED_TYPES.includes(file.type))) {
       setFileError("JPG, PNG, WEBP 파일만 올릴 수 있어요.");
       return;
     }
     if (selected.some((file) => file.size > MAX_SOURCE_IMAGE_SIZE)) {
       setFileError("원본 사진은 한 장당 20MB 이하로 선택해 주세요.");
-      return;
-    }
-    if (files.length + selected.length > 3) {
-      setFileError("사진은 최대 3장까지 올릴 수 있어요.");
       return;
     }
     setFileError("");
@@ -142,11 +147,6 @@ export function ReportForm() {
 
   const goToStoryStep = () => {
     if (canGoToStory) setStep(2);
-  };
-
-  const cancelUpload = () => {
-    uploadControllerRef.current?.abort();
-    showToast("제보 업로드를 취소했어요.", "INFO");
   };
 
   const uploadLabel = uploadProgress?.stage === "UPLOADING"
@@ -180,16 +180,17 @@ export function ReportForm() {
         </button>
 
         <section className="mt-8">
-          <h2 className="text-[17px] font-extrabold">사진 <span className="align-middle text-[11px] font-semibold text-[#8ba0ae]">선택 · 최대 3장</span></h2>
+          <h2 className="text-[17px] font-extrabold">사진 <span className="align-middle text-[11px] font-semibold text-[#8ba0ae]">최대 3장</span></h2>
           <div className="mt-3 grid grid-cols-3 gap-2.5">
             {Array.from({ length: 3 }).map((_, index) => {
               const preview = previews[index];
               if (preview) return <div key={`${preview.file.name}-${preview.file.lastModified}`} className="relative aspect-square overflow-hidden rounded-[18px] bg-[#edf4f7]"><Image src={preview.url} alt={`선택한 사진 ${index + 1}`} fill unoptimized className="object-cover" /><button type="button" onClick={() => setValue("images", files.filter((_, fileIndex) => fileIndex !== index), { shouldValidate: true })} className="absolute right-1.5 top-1.5 flex size-7 items-center justify-center rounded-full bg-[#173144]/75 text-white" aria-label={`사진 ${index + 1} 삭제`}><X size={15} /></button></div>;
-              if (index === files.length) return <button key="add-image" type="button" disabled={isOptimizingImages} onClick={() => inputRef.current?.click()} className="flex aspect-square flex-col items-center justify-center rounded-[18px] border border-dashed border-[#bcd3df] bg-white text-[#718594] disabled:cursor-wait disabled:opacity-60">{isOptimizingImages ? <LoaderCircle size={23} className="animate-spin" /> : <ImagePlus size={23} />}<span className="mt-1 text-xs font-bold">{isOptimizingImages ? "최적화 중" : "사진 추가"}</span></button>;
+              if (index === files.length) return <button key="add-image" type="button" disabled={isOptimizingImages} onClick={() => setIsPhotoSourceOpen(true)} className="flex aspect-square flex-col items-center justify-center rounded-[18px] border border-dashed border-[#bcd3df] bg-white text-[#718594] disabled:cursor-wait disabled:opacity-60">{isOptimizingImages ? <LoaderCircle size={23} className="animate-spin" /> : <ImagePlus size={23} />}<span className="mt-1 text-xs font-bold">{isOptimizingImages ? "최적화 중" : "사진 추가"}</span></button>;
               return <div key={`empty-${index}`} className="aspect-square rounded-[18px] border border-dashed border-[#d9e6ec] bg-white/45" aria-hidden="true" />;
             })}
           </div>
-          <input ref={inputRef} type="file" multiple disabled={isOptimizingImages} accept="image/jpeg,image/png,image/webp" onChange={(event) => void addImages(event)} className="hidden" />
+          <input ref={galleryInputRef} type="file" multiple disabled={isOptimizingImages} accept="image/jpeg,image/png,image/webp" onChange={(event) => void addImages(event)} className="hidden" />
+          <input ref={cameraInputRef} type="file" capture="environment" disabled={isOptimizingImages} accept="image/*" onChange={(event) => void addImages(event)} className="hidden" />
           {(fileError || errors.images?.message) && <p className="mt-2 text-xs font-semibold text-[#e26060]">{fileError || errors.images?.message}</p>}
         </section>
 
@@ -203,8 +204,20 @@ export function ReportForm() {
         {mutation.isError && <p className="mt-6 rounded-2xl bg-[#fff3f0] p-4 text-center text-sm font-semibold text-[#b4534a]">{mutation.error instanceof Error ? mutation.error.message : "제보를 올리지 못했어요. 잠시 후 다시 시도해 주세요."}</p>}
       </section>}
 
-      <div className="mobile-fixed">{step === 1 ? <button type="button" disabled={!canGoToStory || isOptimizingImages} onClick={goToStoryStep} className="primary-button">다음 <ChevronRight size={19} /></button> : mutation.isPending ? <div className="w-full rounded-[18px] bg-white p-3 shadow-sm"><div className="flex items-center justify-between gap-3"><span className="flex items-center gap-2 text-xs font-extrabold text-[#386177]"><LoaderCircle size={16} className="animate-spin text-[#45ace4]" />{uploadLabel}</span><span className="text-xs font-extrabold text-[#268fc7]">{uploadProgress?.percent ?? 0}%</span></div><div className="mt-2 h-2 overflow-hidden rounded-full bg-[#e4eff5]"><span className="block h-full rounded-full bg-[#45ace4] transition-[width] duration-200" style={{ width: `${uploadProgress?.percent ?? 0}%` }} /></div><button type="button" onClick={cancelUpload} className="mt-2.5 w-full rounded-xl border border-[#d9e7ee] py-2 text-xs font-extrabold text-[#718594] transition hover:border-[#b8cfdb] hover:text-[#526a7a]">업로드 취소</button></div> : <button type="submit" disabled={!canSubmitReport} className="primary-button">{mutation.isError ? "다시 시도" : "제보 올리기"}</button>}</div>
-      <LocationPicker open={needsManualInput} current={reportLocation?.label} isDetecting={isDetecting} detectionError={detectionError} required={false} onClose={() => setNeedsManualInput(false)} onDetect={detectLocation} onSelect={(next) => { setSelectedReportLocation(next); setLocation(next); setNeedsManualInput(false); showToast(`${next.label}으로 위치를 설정했어요.`, "INFO"); }} />
+      <div className="mobile-fixed">{step === 1 ? <button type="button" disabled={!canGoToStory || isOptimizingImages} onClick={goToStoryStep} className="primary-button">다음 <ChevronRight size={19} /></button> : mutation.isPending ? <div className="w-full rounded-[18px] bg-white p-3 shadow-sm"><div className="flex items-center justify-between gap-3"><span className="flex items-center gap-2 text-xs font-extrabold text-[#386177]"><LoaderCircle size={16} className="animate-spin text-[#45ace4]" />{uploadLabel}</span><span className="text-xs font-extrabold text-[#268fc7]">{uploadProgress?.percent ?? 0}%</span></div><div className="mt-2 h-2 overflow-hidden rounded-full bg-[#e4eff5]"><span className="block h-full rounded-full bg-[#45ace4] transition-[width] duration-200" style={{ width: `${uploadProgress?.percent ?? 0}%` }} /></div></div> : <button type="submit" disabled={!canSubmitReport} className="primary-button">{mutation.isError ? "다시 시도" : "제보 올리기"}</button>}</div>
+      <PhotoSourceSheet
+        open={isPhotoSourceOpen}
+        onClose={() => setIsPhotoSourceOpen(false)}
+        onSelectGallery={() => {
+          setIsPhotoSourceOpen(false);
+          galleryInputRef.current?.click();
+        }}
+        onTakePhoto={() => {
+          setIsPhotoSourceOpen(false);
+          cameraInputRef.current?.click();
+        }}
+      />
+      <LocationPicker open={needsManualInput} current={reportLocation} isDetecting={isDetecting} detectionError={detectionError} required={false} onClose={() => setNeedsManualInput(false)} onDetect={detectLocation} onSelect={(next) => { setSelectedReportLocation(next); setLocation(next); setNeedsManualInput(false); showToast(`${getLocationName(next, "full")}으로 위치를 설정했어요.`, "INFO"); }} />
     </form>
   );
 }

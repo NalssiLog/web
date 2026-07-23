@@ -2,7 +2,10 @@ import type { Metadata } from "next";
 import { LegalDocument } from "@/components/legal-document";
 import { PrivacyPolicyContent } from "@/components/legal-content";
 
-export const metadata: Metadata = { title: "개인정보처리방침 | 날씨로그" };
+export const metadata: Metadata = {
+  title: "개인정보처리방침",
+  alternates: { canonical: "/privacy-policy" },
+};
 
 export default function PrivacyPolicyPage() {
   return <LegalDocument title="개인정보처리방침" effectiveDate="2026년 7월 21일"><PrivacyPolicyContent /></LegalDocument>;

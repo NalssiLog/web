@@ -2,11 +2,13 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { weatherApi } from "@/lib/api";
+import { locationApi } from "@/lib/api/location-api";
 import { logger } from "@/lib/logging";
 import type { Location } from "@/lib/types";
 import { useLocationStore } from "@/store/location-store";
 
 const locationLogger = logger.child("location.detection");
+const refreshedLocationIds = new Set<string>();
 
 export function useCurrentLocation() {
   const { location, setLocation, hasAttemptedDetection, markDetectionAttempted } = useLocationStore();
@@ -68,6 +70,15 @@ export function useCurrentLocation() {
     const timeout = window.setTimeout(() => void detectLocation(true), 0);
     return () => window.clearTimeout(timeout);
   }, [detectLocation, hasAttemptedDetection, location]);
+
+  useEffect(() => {
+    const locationId = location?.id;
+    if (!locationId || !/^\d+$/.test(locationId) || refreshedLocationIds.has(locationId)) return;
+    refreshedLocationIds.add(locationId);
+    void locationApi.get(locationId).then(setLocation).catch(() => {
+      refreshedLocationIds.delete(locationId);
+    });
+  }, [location?.id, setLocation]);
 
   return { location, setLocation, isDetecting, detectionError, needsManualInput, setNeedsManualInput, detectLocation };
 }

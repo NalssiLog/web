@@ -119,6 +119,7 @@ export function NicknameEditModal({
             />
             {checkState === "CHECKING" && <LoaderCircle size={16} className="absolute right-3 top-1/2 -translate-y-1/2 animate-spin text-[#45ace4]" aria-label="닉네임 중복 확인 중" />}
           </div>
+          <p className="mt-1.5 text-right text-[11px] font-bold text-[#8ba0ae]">{getTextLength(nickname)}/10</p>
           <div className="mt-2 min-h-5 text-xs font-bold">
             {!isValid && nickname.length > 0 && <p className="whitespace-nowrap text-[9px] tracking-[-0.03em] text-[#c95e5e] min-[390px]:text-[10px] sm:text-[11px]">공백과 초성을 제외한 한글, 영문, 숫자 2~10자로 입력해주세요.</p>}
             {checkState === "AVAILABLE" && <p className="flex items-center gap-1 text-[#2d9b67]"><Check size={14} /> 사용할 수 있는 닉네임이에요.</p>}
