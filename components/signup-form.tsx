@@ -2,9 +2,10 @@
 
 import { ArrowLeft, Check } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { SocialIcon } from "@/components/social-icon";
 import { authApi } from "@/lib/api/auth-api";
+import { ApiError } from "@/lib/api/http-client";
 import type { SocialProvider } from "@/lib/types";
 import { useAuthStore } from "@/store/auth-store";
 import { useLegalModalStore } from "@/store/legal-modal-store";
@@ -29,11 +30,46 @@ export function SignupForm() {
   const [privacyAgreed, setPrivacyAgreed] = useState(false);
   const [termsAgreed, setTermsAgreed] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const canSubmit = Boolean(provider && privacyAgreed && termsAgreed);
+  const [isVerifyingSignupSession, setIsVerifyingSignupSession] = useState(true);
+  const canSubmit = Boolean(provider && !isVerifyingSignupSession && privacyAgreed && termsAgreed);
+
+  const expireSignupSession = useCallback(() => {
+    setPendingSignupProvider(undefined);
+    showToast("인증 시간이 만료되었습니다. 다시 소셜 로그인해 주세요.", "INFO");
+    router.replace("/");
+  }, [router, setPendingSignupProvider, showToast]);
 
   useEffect(() => {
     if (hasCheckedServerSession && !provider) router.replace(user.type === "MEMBER" ? "/mypage" : "/");
   }, [hasCheckedServerSession, provider, router, user.type]);
+
+  useEffect(() => {
+    if (!provider) return;
+    let cancelled = false;
+
+    void authApi.getMe().then((session) => {
+      if (cancelled) return;
+      if (session.result === "SUCCESS" && session.authenticated && session.user) {
+        setServerUser(session.user);
+        setPendingSignupProvider(undefined);
+        router.replace("/");
+        return;
+      }
+      if (session.result !== "SIGNUP_REQUIRED" || !session.pendingAuth) {
+        expireSignupSession();
+        return;
+      }
+      setPendingSignupProvider(session.pendingAuth.provider, session.pendingAuth.email);
+    }).catch(() => {
+      // 네트워크 오류는 실제 가입 요청의 공통 오류 처리에 맡긴다.
+    }).finally(() => {
+      if (!cancelled) setIsVerifyingSignupSession(false);
+    });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [expireSignupSession, provider, router, setPendingSignupProvider, setServerUser]);
 
   const cancel = () => {
     setPendingSignupProvider(undefined);
@@ -58,6 +94,10 @@ export function SignupForm() {
       router.replace("/");
     } catch (error) {
       setIsSubmitting(false);
+      if (error instanceof ApiError && error.code === "AUTH_SESSION_EXPIRED") {
+        expireSignupSession();
+        return;
+      }
       showToast(error instanceof Error ? error.message : "회원가입을 완료하지 못했어요.", "ERROR");
     }
   };
