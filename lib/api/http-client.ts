@@ -20,6 +20,9 @@ export class ApiError extends Error {
 }
 
 const STATE_CHANGING_METHODS = new Set(["POST", "PUT", "PATCH", "DELETE"]);
+const CSRF_COOKIE_NAME = process.env.NEXT_PUBLIC_APP_ENV === "development"
+  ? "DEV-XSRF-TOKEN"
+  : "XSRF-TOKEN";
 
 async function fetchApi(input: RequestInfo | URL, init?: RequestInit) {
   try {
@@ -61,7 +64,7 @@ async function refreshCsrfToken() {
 async function refreshSession() {
   const execute = () => {
     const headers = new Headers();
-    const csrfToken = getCookie("XSRF-TOKEN");
+    const csrfToken = getCookie(CSRF_COOKIE_NAME);
     if (csrfToken) headers.set("X-XSRF-TOKEN", csrfToken);
     return fetchApi(getApiUrl("/api/auth/refresh"), {
       method: "POST",
@@ -87,7 +90,7 @@ export async function apiRequest<T>(path: string, init: RequestInit = {}): Promi
   const execute = () => {
     const headers = new Headers(init.headers);
     if (STATE_CHANGING_METHODS.has(method)) {
-      const csrfToken = getCookie("XSRF-TOKEN");
+      const csrfToken = getCookie(CSRF_COOKIE_NAME);
       if (csrfToken) headers.set("X-XSRF-TOKEN", csrfToken);
     }
     return fetchApi(getApiUrl(path), {

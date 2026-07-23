@@ -56,6 +56,7 @@ export interface Location {
 
 export interface WeatherReport {
   id: string;
+  isMine: boolean;
   location: Location;
   images: string[];
   content: string;

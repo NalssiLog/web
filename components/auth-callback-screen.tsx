@@ -4,7 +4,7 @@ import { LoaderCircle } from "lucide-react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { SocialIcon } from "@/components/social-icon";
-import { authApi, type AuthResult } from "@/lib/api/auth-api";
+import { authApi, type OAuthCallbackResult } from "@/lib/api/auth-api";
 import { resolveApiUrl } from "@/lib/api/config";
 import { logger } from "@/lib/logging";
 import type { SocialProvider } from "@/lib/types";
@@ -19,8 +19,15 @@ const providerLabel: Record<SocialProvider, string> = {
   GOOGLE: "구글",
 };
 
-function isAuthResult(value: string | null): value is AuthResult {
+function isOAuthCallbackResult(value: string | null): value is OAuthCallbackResult {
   return ["SUCCESS", "SIGNUP_REQUIRED", "LINK_REQUIRED", "LINK_SUCCESS", "LINK_FAILED", "FAILED"].includes(value ?? "");
+}
+
+function getOAuthFailureMessage(code: string | null) {
+  if (code === "OAUTH_CANCELLED") return "소셜 로그인을 취소했어요.";
+  if (code === "OAUTH_EMAIL_REQUIRED") return "가입하려면 소셜 계정의 이메일 제공 동의가 필요해요.";
+  if (code === "ACCOUNT_ALREADY_LINKED") return "이미 다른 계정에 연동된 소셜 계정이에요.";
+  return "소셜 로그인을 완료하지 못했어요.";
 }
 
 export function AuthCallbackScreen() {
@@ -37,23 +44,36 @@ export function AuthCallbackScreen() {
     if (startedRef.current) return;
     startedRef.current = true;
     const callbackResult = searchParams.get("result");
-    const result: AuthResult = isAuthResult(callbackResult) ? callbackResult : "FAILED";
+    const result: OAuthCallbackResult = isOAuthCallbackResult(callbackResult) ? callbackResult : "FAILED";
 
     void authApi.getMe().then((session) => {
-      if ((result === "SUCCESS" || result === "LINK_SUCCESS") && session.authenticated && session.user) {
-        authLogger.info("authentication_completed", { result });
+      if (session.result === "SUCCESS" && session.authenticated && session.user) {
         setServerUser(session.user);
-        showToast(result === "LINK_SUCCESS" ? "소셜 계정을 연동했어요." : "로그인했어요.", "SUCCESS");
-        router.replace(result === "LINK_SUCCESS" ? "/mypage" : "/");
+        const code = searchParams.get("code");
+        if (result === "LINK_SUCCESS") {
+          authLogger.info("authentication_completed", { result });
+          showToast("소셜 계정을 연동했어요.", "SUCCESS");
+          router.replace("/mypage");
+          return;
+        }
+        if (result === "LINK_FAILED" || result === "FAILED") {
+          authLogger.warn("authentication_failed", { result, code: code ?? "UNKNOWN" });
+          showToast(getOAuthFailureMessage(code), code === "OAUTH_CANCELLED" ? "INFO" : "ERROR");
+          router.replace(result === "LINK_FAILED" ? "/mypage" : "/");
+          return;
+        }
+        authLogger.info("authentication_completed", { result });
+        showToast("로그인했어요.", "SUCCESS");
+        router.replace("/");
         return;
       }
-      if (result === "SIGNUP_REQUIRED" && session.pendingAuth) {
+      if (session.result === "SIGNUP_REQUIRED" && session.pendingAuth) {
         authLogger.info("signup_required", { provider: session.pendingAuth.provider });
         setPendingSignupProvider(session.pendingAuth.provider, session.pendingAuth.email);
         router.replace("/signup");
         return;
       }
-      if (result === "LINK_REQUIRED" && session.pendingAuth) {
+      if (session.result === "LINK_REQUIRED" && session.pendingAuth) {
         authLogger.info("account_link_required", { provider: session.pendingAuth.provider });
         setPendingLink(session.pendingAuth);
         return;
@@ -65,7 +85,7 @@ export function AuthCallbackScreen() {
       } else {
         authLogger.warn("authentication_failed", { result, code: code ?? "UNKNOWN" });
       }
-      showToast(code === "OAUTH_CANCELLED" ? "소셜 로그인을 취소했어요." : "소셜 로그인을 완료하지 못했어요.", result === "LINK_FAILED" ? "ERROR" : "INFO");
+      showToast(getOAuthFailureMessage(code), code === "OAUTH_CANCELLED" ? "INFO" : "ERROR");
       router.replace("/");
     }).catch((error) => {
       authLogger.error("session_confirmation_failed", error, { result });

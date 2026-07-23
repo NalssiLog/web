@@ -4,7 +4,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { AlertCircle, Check, Flame, LockKeyhole, LocateFixed, MapPin, RefreshCw, Search, Star, X } from "lucide-react";
 import { FormEvent, useEffect, useState, type ReactNode } from "react";
 import { createPortal } from "react-dom";
-import { findSupportedLocation, getLocationName } from "@/lib/constants";
+import { getLocationName } from "@/lib/constants";
 import { locationApi } from "@/lib/api/location-api";
 import { truncateText } from "@/lib/text";
 import type { Location } from "@/lib/types";
@@ -14,7 +14,7 @@ type LocationTab = "SEARCH" | "FAVORITES" | "POPULAR";
 
 interface LocationPickerProps {
   open: boolean;
-  current?: string;
+  current?: Location | null;
   isDetecting: boolean;
   detectionError?: string;
   required?: boolean;
@@ -26,7 +26,7 @@ interface LocationPickerProps {
 export function LocationPicker({ open, current, isDetecting, detectionError, required, onClose, onDetect, onSelect }: LocationPickerProps) {
   if (!open || typeof document === "undefined") return null;
   return createPortal(
-    <LocationPickerDialog key={current} current={current} isDetecting={isDetecting} detectionError={detectionError} required={required} onClose={onClose} onDetect={onDetect} onSelect={onSelect} />,
+    <LocationPickerDialog key={current?.id ?? current?.label} current={current} isDetecting={isDetecting} detectionError={detectionError} required={required} onClose={onClose} onDetect={onDetect} onSelect={onSelect} />,
     document.body,
   );
 }
@@ -35,8 +35,7 @@ function LocationPickerDialog({ current, isDetecting, detectionError, required, 
   const queryClient = useQueryClient();
   const [value, setValue] = useState("");
   const [debouncedValue, setDebouncedValue] = useState("");
-  const currentLocation = current ? findSupportedLocation({ label: current }) ?? { label: current } : null;
-  const [selectedLocation, setSelectedLocation] = useState<Location | null>(currentLocation);
+  const [selectedLocation, setSelectedLocation] = useState<Location | null>(current ?? null);
   const [activeTab, setActiveTab] = useState<LocationTab>("SEARCH");
   const isMember = useAuthStore((state) => state.user.type === "MEMBER");
   const normalizedValue = debouncedValue.replaceAll(" ", "").toLowerCase();
@@ -106,7 +105,7 @@ function LocationPickerDialog({ current, isDetecting, detectionError, required, 
         </div>
         <div className="mb-5 flex items-center gap-3 rounded-[18px] bg-white p-4 shadow-sm shadow-[#b8d6e6]/20">
           <span className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-[#eef9ff] text-[#45ace4]"><MapPin size={19} /></span>
-          <div className="min-w-0 flex-1"><p className="text-[11px] font-bold text-[#718594]">현재 설정된 위치</p>{isDetecting ? <div className="skeleton mt-1.5 h-4 w-44 max-w-full rounded" aria-label="현재 위치 불러오는 중" /> : <p className="mt-0.5 truncate text-sm font-extrabold">{selectedLocation ? getLocationName(selectedLocation, "full") : current ?? "아직 설정되지 않았어요"}</p>}</div>
+          <div className="min-w-0 flex-1"><p className="text-[11px] font-bold text-[#718594]">현재 설정된 위치</p>{isDetecting ? <div className="skeleton mt-1.5 h-4 w-44 max-w-full rounded" aria-label="현재 위치 불러오는 중" /> : <p className="mt-0.5 break-keep text-sm font-extrabold leading-5">{selectedLocation ? getLocationName(selectedLocation, "full") : current ? getLocationName(current, "full") : "아직 설정되지 않았어요"}</p>}</div>
           <button type="button" onClick={detectCandidateLocation} disabled={isDetecting} className="flex shrink-0 items-center gap-1 rounded-xl bg-[#eef9ff] px-2.5 py-2 text-[11px] font-extrabold text-[#268fc7] disabled:opacity-50" aria-label="GPS로 현재 위치 다시 찾기"><LocateFixed size={14} /> GPS</button>
         </div>
         {detectionError && <p className="-mt-3 mb-5 flex items-start gap-1.5 px-1 text-xs font-bold leading-5 text-[#b36b54]"><AlertCircle size={14} className="mt-0.5 shrink-0" />{detectionError}</p>}
@@ -172,7 +171,7 @@ function LocationList({ empty, locations, selectedLocation, onSelect, isFavorite
 function LocationRow({ location, selected, favorite, onSelect, onToggleFavorite }: { location: Location; selected: boolean; favorite?: boolean; onSelect: (location: Location) => void; onToggleFavorite?: (location: Location) => void }) {
   return <div className={`flex items-center rounded-xl transition ${selected ? "bg-[#eaf7ff] text-[#268fc7]" : "hover:bg-[#f5f9fb]"}`}><button type="button" onClick={() => onSelect(location)} className="flex min-w-0 flex-1 items-center gap-3 px-3 py-3 text-left text-sm font-bold">
       <MapPin size={16} className={selected ? "text-[#45ace4]" : "text-[#8ba0ae]"} />
-      <span className="flex-1 truncate">{getLocationName(location, "full")}</span>
+      <span className="flex-1 break-keep leading-5">{getLocationName(location, "full")}</span>
       {selected && <Check size={16} strokeWidth={2.5} />}
   </button>{onToggleFavorite && <button type="button" onClick={() => onToggleFavorite(location)} className={`mr-1 flex size-9 items-center justify-center rounded-lg ${favorite ? "text-[#f0a629]" : "text-[#a4b3bd] hover:text-[#f0a629]"}`} aria-label={favorite ? `${location.label} 즐겨찾기 해제` : `${location.label} 즐겨찾기 추가`}><Star size={16} fill={favorite ? "currentColor" : "none"} /></button>}</div>;
 }

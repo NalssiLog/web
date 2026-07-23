@@ -2,8 +2,13 @@ import { getApiUrl } from "@/lib/api/config";
 import { apiRequest, jsonRequest } from "@/lib/api/http-client";
 import type { AvatarType, SocialProvider } from "@/lib/types";
 
-export type AuthResult =
-  | "NONE"
+export type SessionAuthResult =
+  | "SUCCESS"
+  | "SIGNUP_REQUIRED"
+  | "LINK_REQUIRED"
+  | "NONE";
+
+export type OAuthCallbackResult =
   | "SUCCESS"
   | "SIGNUP_REQUIRED"
   | "LINK_REQUIRED"
@@ -33,14 +38,12 @@ interface RawAuthMeResponse extends Omit<AuthMeResponse, "pendingAuth"> {
 
 export interface AuthMeResponse {
   authenticated: boolean;
-  result: AuthResult | null;
+  result: SessionAuthResult;
   user: AuthUserResponse | null;
   pendingAuth: PendingAuthResponse | null;
 }
 
 export interface SignupRequest {
-  name: string;
-  nickname: string;
   agreedTerms: Array<{ type: "SERVICE" | "PRIVACY"; version: string }>;
 }
 

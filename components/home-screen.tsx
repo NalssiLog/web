@@ -15,6 +15,7 @@ import { UserPanel } from "@/components/user-panel";
 import { WeatherSummary, WeatherSummarySkeleton } from "@/components/weather-summary";
 import { useCurrentLocation } from "@/hooks/use-current-location";
 import { weatherApi } from "@/lib/api";
+import { getLocationName } from "@/lib/constants";
 import { useToastStore } from "@/store/toast-store";
 import { useAuthStore } from "@/store/auth-store";
 
@@ -27,7 +28,7 @@ export function HomeScreen() {
   const showToast = useToastStore((state) => state.showToast);
   const loadMoreRef = useRef<HTMLDivElement>(null);
   const footerBoundaryRef = useRef<HTMLDivElement>(null);
-  const locationLabel = location?.label ?? "";
+  const locationLabel = location ? getLocationName(location, "short") : "";
   const locationKey = location?.id ?? locationLabel;
   const summary = useQuery({ queryKey: ["weather-summary", locationKey], queryFn: () => weatherApi.getSummary(location!), enabled: !!location, refetchInterval: 10_000, refetchIntervalInBackground: false });
   const reports = useInfiniteQuery({
@@ -100,7 +101,7 @@ export function HomeScreen() {
       </div>
       <div ref={footerBoundaryRef} className="h-px" aria-hidden="true" />
       {canCreateReport && <div className={isFooterReached ? "home-cta-inline" : "mobile-fixed"}><Link href="/reports/new" className="primary-button"><Camera size={20} strokeWidth={2.4} /> 지금 날씨 제보하기</Link></div>}
-      <LocationPicker open={needsManualInput} current={locationLabel} isDetecting={isDetecting} detectionError={detectionError} required={false} onClose={() => setNeedsManualInput(false)} onDetect={detectLocation} onSelect={(next) => { setLocation(next); setNeedsManualInput(false); showToast(`${next.label} 날씨로 이동했어요.`, "INFO"); }} />
+      <LocationPicker open={needsManualInput} current={location} isDetecting={isDetecting} detectionError={detectionError} required={false} onClose={() => setNeedsManualInput(false)} onDetect={detectLocation} onSelect={(next) => { setLocation(next); setNeedsManualInput(false); showToast(`${getLocationName(next, "short")} 날씨로 이동했어요.`, "INFO"); }} />
       <UserPanel open={isUserPanelOpen} onClose={() => setIsUserPanelOpen(false)} />
     </div>
   );

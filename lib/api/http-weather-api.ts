@@ -18,6 +18,7 @@ const reportUploadLogger = logger.child("report.image_upload");
 
 interface BackendReport {
   id: string;
+  isMine: boolean;
   location: LocationResponse;
   author: {
     type: "ANONYMOUS" | "MEMBER";
@@ -80,6 +81,7 @@ function normalizeReport(report: BackendReport): WeatherReport {
 
   return {
     id: report.id,
+    isMine: report.isMine,
     location: normalizeLocation(report.location),
     images: report.imageUrls.filter(isDisplayableImage),
     content: report.comment,
@@ -272,6 +274,9 @@ export const httpWeatherApi: WeatherApi = {
     options.onProgress?.({ stage: "CREATING", percent: 100 });
     return normalizeReport(report);
   },
+
+  deleteReport: (id) =>
+    jsonRequest<void>(`/api/reports/${encodeURIComponent(id)}`, "DELETE"),
 
   toggleThanks: (id, isThanked) =>
     jsonRequest(`/api/reports/${encodeURIComponent(id)}/thanks`, isThanked ? "DELETE" : "POST"),

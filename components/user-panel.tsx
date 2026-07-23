@@ -1,7 +1,8 @@
 "use client";
 
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { flushSync } from "react-dom";
 import { useRouter } from "next/navigation";
 import {
   ArrowLeft,
@@ -12,12 +13,14 @@ import {
   Mail,
   MessageCircle,
   MessageSquareText,
+  Pencil,
   Send,
   ShieldCheck,
   Trash2,
   UserRound,
   X,
 } from "lucide-react";
+import { NameEditModal } from "@/components/name-edit-modal";
 import { WithdrawalConfirmModal } from "@/components/withdrawal-confirm-modal";
 import { SocialIcon } from "@/components/social-icon";
 import { authApi } from "@/lib/api/auth-api";
@@ -36,7 +39,7 @@ const providerLabel: Record<SocialProvider, string> = {
   GOOGLE: "구글",
 };
 
-const socialProviders: SocialProvider[] = ["NAVER", "KAKAO", "GOOGLE"];
+const socialProviders: SocialProvider[] = ["NAVER", "KAKAO"];
 
 export function UserPanel({ open, onClose }: { open: boolean; onClose: () => void }) {
   const router = useRouter();
@@ -47,6 +50,7 @@ export function UserPanel({ open, onClose }: { open: boolean; onClose: () => voi
   const openLegalDocument = useLegalModalStore((state) => state.openLegalDocument);
   const [view, setView] = useState<"MAIN" | "ACCOUNT" | "FEEDBACK">("MAIN");
   const [isWithdrawalOpen, setIsWithdrawalOpen] = useState(false);
+  const [isNameEditOpen, setIsNameEditOpen] = useState(false);
   const [isWithdrawing, setIsWithdrawing] = useState(false);
   const [feedback, setFeedback] = useState("");
   const [isSubmittingFeedback, setIsSubmittingFeedback] = useState(false);
@@ -59,19 +63,44 @@ export function UserPanel({ open, onClose }: { open: boolean; onClose: () => voi
     retry: false,
   });
 
+  useEffect(() => {
+    const resetSocialNavigationState = () => setCheckingProvider(null);
+    const resetWhenVisible = () => {
+      if (document.visibilityState === "visible") resetSocialNavigationState();
+    };
+
+    window.addEventListener("pageshow", resetSocialNavigationState);
+    window.addEventListener("focus", resetSocialNavigationState);
+    window.addEventListener("popstate", resetSocialNavigationState);
+    document.addEventListener("visibilitychange", resetWhenVisible);
+    return () => {
+      window.removeEventListener("pageshow", resetSocialNavigationState);
+      window.removeEventListener("focus", resetSocialNavigationState);
+      window.removeEventListener("popstate", resetSocialNavigationState);
+      document.removeEventListener("visibilitychange", resetWhenVisible);
+    };
+  }, []);
+
   if (!open) return null;
 
   const closePanel = () => {
     setView("MAIN");
     setIsWithdrawalOpen(false);
+    setIsNameEditOpen(false);
+    setCheckingProvider(null);
     onClose();
+  };
+
+  const navigateToSocialAuth = (url: string) => {
+    flushSync(() => setCheckingProvider(null));
+    window.location.assign(url);
   };
 
   const openServerLogin = async (provider: SocialProvider) => {
     setCheckingProvider(provider);
     try {
       await authApi.checkHealth();
-      window.location.assign(authApi.getLoginUrl(provider));
+      navigateToSocialAuth(authApi.getLoginUrl(provider));
     } catch {
       setCheckingProvider(null);
       showToast("로그인 서버에 연결하지 못했어요. 잠시 후 다시 시도해 주세요.", "ERROR");
@@ -124,12 +153,24 @@ export function UserPanel({ open, onClose }: { open: boolean; onClose: () => voi
         showToast(`${providerLabel[provider]} 계정 연동을 해제했어요.`, "SUCCESS");
       } else {
         const { authorizationUrl } = await authApi.linkSocial(provider);
-        window.location.assign(resolveApiUrl(authorizationUrl));
+        navigateToSocialAuth(resolveApiUrl(authorizationUrl));
       }
     } catch (error) {
       showToast(error instanceof Error ? error.message : `소셜 계정 ${linked ? "연동을 해제" : "연동을 시작"}하지 못했어요.`, "ERROR");
     } finally {
       setCheckingProvider(null);
+    }
+  };
+
+  const handleNameSave = async (name: string) => {
+    try {
+      const updatedAccount = await memberApi.updateName(name);
+      queryClient.setQueryData(["members", "me"], updatedAccount);
+      setIsNameEditOpen(false);
+      showToast("이름을 변경했어요.", "SUCCESS");
+    } catch (error) {
+      showToast(error instanceof Error ? error.message : "이름을 변경하지 못했어요.", "ERROR");
+      throw error;
     }
   };
 
@@ -170,7 +211,8 @@ export function UserPanel({ open, onClose }: { open: boolean; onClose: () => voi
               {account.isLoading ? <div className="space-y-4 p-4"><div className="skeleton h-10 rounded-xl" /><div className="skeleton h-10 rounded-xl" /></div> : <>
                 <div className="flex items-center gap-3 border-b border-[#edf2f5] px-4 py-4">
                   <UserRound size={18} className="shrink-0 text-[#718594]" />
-                  <div className="min-w-0"><p className="text-xs font-bold text-[#718594]">이름</p><p className="mt-1 truncate text-sm font-extrabold">{memberAccount?.name || "정보 없음"}</p></div>
+                  <div className="min-w-0 flex-1"><p className="text-xs font-bold text-[#718594]">이름</p><p className="mt-1 truncate text-sm font-extrabold">{memberAccount?.name || "정보 없음"}</p></div>
+                  <button type="button" onClick={() => setIsNameEditOpen(true)} className="flex shrink-0 items-center gap-1 rounded-xl border border-[#d9e7ee] bg-[#f8fcfe] px-2.5 py-2 text-[11px] font-extrabold text-[#526a7a] transition hover:border-[#9fd4ee] hover:text-[#238fc9]"><Pencil size={13} /> 수정</button>
                 </div>
                 <div className="flex items-center gap-3 px-4 py-4">
                   <Mail size={18} className="shrink-0 text-[#718594]" />
@@ -217,9 +259,9 @@ export function UserPanel({ open, onClose }: { open: boolean; onClose: () => voi
         </>) : <div className="flex min-h-24 items-center justify-center gap-3.5">
           <button type="button" disabled={checkingProvider !== null} onClick={() => void openServerLogin("NAVER")} className="flex size-11 items-center justify-center rounded-full bg-[#03c75a] text-lg font-black text-white shadow-sm transition hover:-translate-y-0.5 disabled:cursor-wait disabled:opacity-60" aria-label="네이버 로그인">N</button>
           <button type="button" disabled={checkingProvider !== null} onClick={() => void openServerLogin("KAKAO")} className="flex size-11 items-center justify-center rounded-full bg-[#fee500] text-[#181600] shadow-sm transition hover:-translate-y-0.5 disabled:cursor-wait disabled:opacity-60" aria-label="카카오 로그인"><MessageCircle size={21} fill="currentColor" /></button>
-          <button type="button" disabled={checkingProvider !== null} onClick={() => void openServerLogin("GOOGLE")} className="flex size-11 items-center justify-center rounded-full border border-[#e2e8ec] bg-white text-lg font-black shadow-sm transition hover:-translate-y-0.5 disabled:cursor-wait disabled:opacity-60" aria-label="구글 로그인"><span className="bg-[conic-gradient(from_-45deg,#4285f4_0_25%,#34a853_0_42%,#fbbc05_0_67%,#ea4335_0_84%,#4285f4_0)] bg-clip-text text-transparent">G</span></button>
         </div>}
       </div>
+      {member && isNameEditOpen && <NameEditModal currentName={memberAccount?.name ?? ""} onClose={() => setIsNameEditOpen(false)} onSave={handleNameSave} />}
       {member && isWithdrawalOpen && <WithdrawalConfirmModal isSubmitting={isWithdrawing} onClose={() => setIsWithdrawalOpen(false)} onConfirm={() => void handleWithdrawal()} />}
     </div>
   );

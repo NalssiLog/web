@@ -1,10 +1,13 @@
 "use client";
 
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { useLegalModalStore } from "@/store/legal-modal-store";
 
 export function SiteFooter() {
+  const pathname = usePathname();
   const openLegalDocument = useLegalModalStore((state) => state.openLegalDocument);
+  if (pathname === "/reports/new") return null;
 
   return (
     <footer id="site-footer" className="border-t border-[#dcecf4] px-5 pb-[max(32px,env(safe-area-inset-bottom))] pt-7 text-center">

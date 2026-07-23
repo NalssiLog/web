@@ -1,0 +1,7 @@
+[submodule "env-config"]
+	path = env-config
+	url = git@github.com:nalssilog/web-config.git
+	branch = main
+	update = none
+	fetchRecurseSubmodules = false
+	ignore = all
