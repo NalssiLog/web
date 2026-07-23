@@ -3,6 +3,9 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
+    "config:init": "git -c submodule.env-config.update=checkout submodule update --init --checkout env-config && git -C env-config switch main && git -C env-config pull --ff-only origin main && npm run config:sync",
+    "config:sync": "node scripts/sync-private-config.mjs",
+    "predev": "npm run config:sync",
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
