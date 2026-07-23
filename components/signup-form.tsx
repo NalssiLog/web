@@ -1,26 +1,20 @@
 "use client";
 
-import { ArrowLeft, Check, LoaderCircle } from "lucide-react";
+import { ArrowLeft, Check } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import { SocialIcon } from "@/components/social-icon";
 import { authApi } from "@/lib/api/auth-api";
-import { getTextLength } from "@/lib/text";
 import type { SocialProvider } from "@/lib/types";
 import { useAuthStore } from "@/store/auth-store";
 import { useLegalModalStore } from "@/store/legal-modal-store";
 import { useToastStore } from "@/store/toast-store";
-
-type CheckState = "IDLE" | "CHECKING" | "AVAILABLE" | "TAKEN";
 
 const providerLabel: Record<SocialProvider, string> = {
   NAVER: "네이버",
   KAKAO: "카카오",
   GOOGLE: "구글",
 };
-
-const nicknamePattern = /^[가-힣a-zA-Z0-9]{2,10}$/;
-const isNicknameValid = (value: string) => value === value.trim() && nicknamePattern.test(value);
 
 export function SignupForm() {
   const router = useRouter();
@@ -32,49 +26,14 @@ export function SignupForm() {
   const setPendingSignupProvider = useAuthStore((state) => state.setPendingSignupProvider);
   const openLegalDocument = useLegalModalStore((state) => state.openLegalDocument);
   const showToast = useToastStore((state) => state.showToast);
-  const [name, setName] = useState("");
-  const [nickname, setNickname] = useState("");
-  const [checkState, setCheckState] = useState<CheckState>("IDLE");
   const [privacyAgreed, setPrivacyAgreed] = useState(false);
   const [termsAgreed, setTermsAgreed] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const checkTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const checkRequestRef = useRef(0);
-  const isNameValid = getTextLength(name.trim()) > 0 && getTextLength(name.trim()) <= 30;
-  const isValid = isNicknameValid(nickname);
-  const canSubmit = Boolean(provider && isNameValid && checkState === "AVAILABLE" && privacyAgreed && termsAgreed);
+  const canSubmit = Boolean(provider && privacyAgreed && termsAgreed);
 
   useEffect(() => {
     if (hasCheckedServerSession && !provider) router.replace(user.type === "MEMBER" ? "/mypage" : "/");
   }, [hasCheckedServerSession, provider, router, user.type]);
-
-  useEffect(() => () => {
-    if (checkTimerRef.current) clearTimeout(checkTimerRef.current);
-  }, []);
-
-  const changeNickname = (value: string) => {
-    if (getTextLength(value) > 10) return;
-    setNickname(value);
-    checkRequestRef.current += 1;
-    const requestId = checkRequestRef.current;
-    if (checkTimerRef.current) clearTimeout(checkTimerRef.current);
-
-    if (!isNicknameValid(value)) {
-      setCheckState("IDLE");
-      return;
-    }
-
-    setCheckState("CHECKING");
-    checkTimerRef.current = setTimeout(async () => {
-      try {
-        const available = (await authApi.checkNickname(value)).available;
-        if (requestId !== checkRequestRef.current) return;
-        setCheckState(available ? "AVAILABLE" : "TAKEN");
-      } catch {
-        if (requestId === checkRequestRef.current) setCheckState("IDLE");
-      }
-    }, 350);
-  };
 
   const cancel = () => {
     setPendingSignupProvider(undefined);
@@ -86,8 +45,6 @@ export function SignupForm() {
     setIsSubmitting(true);
     try {
       await authApi.signup({
-        name: name.trim(),
-        nickname: nickname.trim(),
         agreedTerms: [
           { type: "SERVICE", version: "1.0" },
           { type: "PRIVACY", version: "1.0" },
@@ -126,55 +83,6 @@ export function SignupForm() {
               <p className="text-sm font-extrabold">{providerLabel[provider]} 계정</p>
               <p className="mt-0.5 truncate text-xs font-semibold text-[#718594]">{pendingEmail ?? "이메일 정보 없음"}</p>
             </div>
-          </div>
-        </section>
-
-        <section className="mt-3 rounded-[22px] bg-white p-5 shadow-sm shadow-[#b8d6e6]/20">
-          <label htmlFor="signup-name" className="text-sm font-extrabold">이름 <span className="text-[#45ace4]">*</span></label>
-          <input
-            id="signup-name"
-            value={name}
-            required
-            maxLength={30}
-            autoComplete="name"
-            onChange={(event) => {
-              if (getTextLength(event.currentTarget.value) <= 30) setName(event.currentTarget.value);
-            }}
-            placeholder="이름 입력"
-            className="mt-3 w-full rounded-xl border border-[#dce8ee] px-3 py-3 text-sm font-bold outline-none transition focus:border-[#45ace4]"
-          />
-          <label htmlFor="signup-nickname" className="mt-5 block text-sm font-extrabold">닉네임 <span className="text-[#45ace4]">*</span></label>
-          <div className="relative mt-3">
-            <input
-              id="signup-nickname"
-              value={nickname}
-              required
-              maxLength={10}
-              onBeforeInput={(event) => {
-                const inputType = (event.nativeEvent as InputEvent).inputType;
-                if (typeof inputType === "string" && inputType.startsWith("insert") && getTextLength(nickname) >= 10) event.preventDefault();
-              }}
-              onKeyDown={(event) => {
-                const isCharacterKey = event.key.length === 1 && !event.ctrlKey && !event.metaKey && !event.altKey;
-                if (isCharacterKey && getTextLength(nickname) >= 10) event.preventDefault();
-              }}
-              onPaste={(event) => {
-                const selectionStart = event.currentTarget.selectionStart ?? 0;
-                const selectionEnd = event.currentTarget.selectionEnd ?? selectionStart;
-                const selectedLength = getTextLength(nickname.slice(selectionStart, selectionEnd));
-                const pastedLength = getTextLength(event.clipboardData.getData("text"));
-                if (getTextLength(nickname) >= 10 || getTextLength(nickname) - selectedLength + pastedLength > 10) event.preventDefault();
-              }}
-              onChange={(event) => changeNickname(event.currentTarget.value)}
-              placeholder="닉네임 입력"
-              className="w-full rounded-xl border border-[#dce8ee] px-3 py-3 pr-10 text-sm font-bold outline-none transition focus:border-[#45ace4]"
-            />
-            {checkState === "CHECKING" && <LoaderCircle size={16} className="absolute right-3 top-1/2 -translate-y-1/2 animate-spin text-[#45ace4]" aria-label="닉네임 중복 확인 중" />}
-          </div>
-          <div className="mt-2 min-h-5 text-[11px] font-bold">
-            {!isValid && nickname.length > 0 && <p className="whitespace-nowrap tracking-[-0.03em] text-[#c95e5e]">공백과 초성을 제외한 한글, 영문, 숫자 2~10자로 입력해주세요.</p>}
-            {checkState === "AVAILABLE" && <p className="flex items-center gap-1 text-[#2d9b67]"><Check size={14} /> 사용할 수 있는 닉네임이에요.</p>}
-            {checkState === "TAKEN" && <p className="text-[#c95e5e]">이미 사용 중인 닉네임이에요.</p>}
           </div>
         </section>
 

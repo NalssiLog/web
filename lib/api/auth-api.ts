@@ -39,8 +39,6 @@ export interface AuthMeResponse {
 }
 
 export interface SignupRequest {
-  name: string;
-  nickname: string;
   agreedTerms: Array<{ type: "SERVICE" | "PRIVACY"; version: string }>;
 }
 

@@ -62,6 +62,7 @@ async function uploadAvatarFile(file: File) {
 
 export const memberApi = {
   getMe: () => apiRequest<MemberAccount>("/api/members/me"),
+  updateName: (name: string) => jsonRequest<MemberAccount>("/api/members/me/name", "PATCH", { name }),
   updateNickname: (nickname: string) => jsonRequest<MemberAccount>("/api/members/me/nickname", "PATCH", { nickname }),
   updateAvatar: (type: AvatarType, value: string | null) =>
     jsonRequest<MemberAccount>("/api/members/me/avatar", "PATCH", { type, value }),

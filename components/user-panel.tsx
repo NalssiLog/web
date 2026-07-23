@@ -13,12 +13,14 @@ import {
   Mail,
   MessageCircle,
   MessageSquareText,
+  Pencil,
   Send,
   ShieldCheck,
   Trash2,
   UserRound,
   X,
 } from "lucide-react";
+import { NameEditModal } from "@/components/name-edit-modal";
 import { WithdrawalConfirmModal } from "@/components/withdrawal-confirm-modal";
 import { SocialIcon } from "@/components/social-icon";
 import { authApi } from "@/lib/api/auth-api";
@@ -48,6 +50,7 @@ export function UserPanel({ open, onClose }: { open: boolean; onClose: () => voi
   const openLegalDocument = useLegalModalStore((state) => state.openLegalDocument);
   const [view, setView] = useState<"MAIN" | "ACCOUNT" | "FEEDBACK">("MAIN");
   const [isWithdrawalOpen, setIsWithdrawalOpen] = useState(false);
+  const [isNameEditOpen, setIsNameEditOpen] = useState(false);
   const [isWithdrawing, setIsWithdrawing] = useState(false);
   const [feedback, setFeedback] = useState("");
   const [isSubmittingFeedback, setIsSubmittingFeedback] = useState(false);
@@ -83,6 +86,7 @@ export function UserPanel({ open, onClose }: { open: boolean; onClose: () => voi
   const closePanel = () => {
     setView("MAIN");
     setIsWithdrawalOpen(false);
+    setIsNameEditOpen(false);
     setCheckingProvider(null);
     onClose();
   };
@@ -158,6 +162,18 @@ export function UserPanel({ open, onClose }: { open: boolean; onClose: () => voi
     }
   };
 
+  const handleNameSave = async (name: string) => {
+    try {
+      const updatedAccount = await memberApi.updateName(name);
+      queryClient.setQueryData(["members", "me"], updatedAccount);
+      setIsNameEditOpen(false);
+      showToast("이름을 변경했어요.", "SUCCESS");
+    } catch (error) {
+      showToast(error instanceof Error ? error.message : "이름을 변경하지 못했어요.", "ERROR");
+      throw error;
+    }
+  };
+
   const handleWithdrawal = async () => {
     if (isWithdrawing) return;
     setIsWithdrawing(true);
@@ -195,7 +211,8 @@ export function UserPanel({ open, onClose }: { open: boolean; onClose: () => voi
               {account.isLoading ? <div className="space-y-4 p-4"><div className="skeleton h-10 rounded-xl" /><div className="skeleton h-10 rounded-xl" /></div> : <>
                 <div className="flex items-center gap-3 border-b border-[#edf2f5] px-4 py-4">
                   <UserRound size={18} className="shrink-0 text-[#718594]" />
-                  <div className="min-w-0"><p className="text-xs font-bold text-[#718594]">이름</p><p className="mt-1 truncate text-sm font-extrabold">{memberAccount?.name || "정보 없음"}</p></div>
+                  <div className="min-w-0 flex-1"><p className="text-xs font-bold text-[#718594]">이름</p><p className="mt-1 truncate text-sm font-extrabold">{memberAccount?.name || "정보 없음"}</p></div>
+                  <button type="button" onClick={() => setIsNameEditOpen(true)} className="flex shrink-0 items-center gap-1 rounded-xl border border-[#d9e7ee] bg-[#f8fcfe] px-2.5 py-2 text-[11px] font-extrabold text-[#526a7a] transition hover:border-[#9fd4ee] hover:text-[#238fc9]"><Pencil size={13} /> 수정</button>
                 </div>
                 <div className="flex items-center gap-3 px-4 py-4">
                   <Mail size={18} className="shrink-0 text-[#718594]" />
@@ -244,6 +261,7 @@ export function UserPanel({ open, onClose }: { open: boolean; onClose: () => voi
           <button type="button" disabled={checkingProvider !== null} onClick={() => void openServerLogin("KAKAO")} className="flex size-11 items-center justify-center rounded-full bg-[#fee500] text-[#181600] shadow-sm transition hover:-translate-y-0.5 disabled:cursor-wait disabled:opacity-60" aria-label="카카오 로그인"><MessageCircle size={21} fill="currentColor" /></button>
         </div>}
       </div>
+      {member && isNameEditOpen && <NameEditModal currentName={memberAccount?.name ?? ""} onClose={() => setIsNameEditOpen(false)} onSave={handleNameSave} />}
       {member && isWithdrawalOpen && <WithdrawalConfirmModal isSubmitting={isWithdrawing} onClose={() => setIsWithdrawalOpen(false)} onConfirm={() => void handleWithdrawal()} />}
     </div>
   );
