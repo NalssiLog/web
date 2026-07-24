@@ -36,7 +36,7 @@ export function MemberPage({ memberId }: { memberId: string }) {
         <div className="flex h-18 min-w-0 flex-1 items-center"><p className="truncate text-base font-extrabold">{profile.data.nickname}</p></div>
       </section>
       <section className="px-5">
-        <div className="mb-3 flex h-11 items-center justify-start border-b-2 border-[#45ace4] pl-1 text-[#268fc7]" aria-label="작성한 제보"><Grid3X3 size={19} strokeWidth={2.2} /></div>
+        <div className="mb-3 grid h-11 grid-cols-3 gap-1.5 border-b-2 border-[#45ace4] text-[#268fc7]" aria-label="작성한 제보"><span className="flex items-center justify-center"><Grid3X3 size={19} strokeWidth={2.2} /></span><span /><span /></div>
         <MyReportList memberId={memberId} columns={3} publicProfile />
       </section>
       {isProfilePreviewOpen && <ProfilePreviewModal avatarUrl={profile.data.avatarUrl} onClose={() => setIsProfilePreviewOpen(false)} />}
@@ -57,7 +57,7 @@ function MemberPageSkeleton({ onBack }: { onBack: () => void }) {
         <div className="flex h-18 min-w-0 flex-1 items-center"><div className="skeleton h-4 w-28 rounded" /></div>
       </section>
       <section className="px-5">
-        <div className="mb-3 flex h-11 items-center border-b-2 border-[#b9dce9] pl-1"><div className="skeleton size-[19px] rounded" /></div>
+        <div className="mb-3 grid h-11 grid-cols-3 gap-1.5 border-b-2 border-[#b9dce9]"><span className="flex items-center justify-center"><span className="skeleton size-[19px] rounded" /></span><span /><span /></div>
         <div className="grid grid-cols-3 gap-1.5">
           {Array.from({ length: 6 }).map((_, index) => <div key={index} className="skeleton aspect-square rounded-lg" />)}
         </div>

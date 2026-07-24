@@ -3,6 +3,49 @@ const OUTPUT_QUALITY = 0.86;
 const AVATAR_EDGE = 512;
 const MAX_AVATAR_SIZE = 2 * 1024 * 1024;
 
+interface DecodedImage {
+  source: CanvasImageSource;
+  width: number;
+  height: number;
+  dispose: () => void;
+}
+
+async function decodeImage(file: File): Promise<DecodedImage> {
+  if (typeof createImageBitmap === "function") {
+    try {
+      const bitmap = await createImageBitmap(file, { imageOrientation: "from-image" });
+      return {
+        source: bitmap,
+        width: bitmap.width,
+        height: bitmap.height,
+        dispose: () => bitmap.close(),
+      };
+    } catch {
+      // 일부 인앱브라우저는 API를 노출하면서도 앨범 파일 디코딩에 실패한다.
+    }
+  }
+
+  const objectUrl = URL.createObjectURL(file);
+  const image = new Image();
+  image.decoding = "async";
+  try {
+    await new Promise<void>((resolve, reject) => {
+      image.onload = () => resolve();
+      image.onerror = () => reject(new Error("선택한 사진을 불러오지 못했어요."));
+      image.src = objectUrl;
+    });
+    return {
+      source: image,
+      width: image.naturalWidth,
+      height: image.naturalHeight,
+      dispose: () => URL.revokeObjectURL(objectUrl),
+    };
+  } catch (error) {
+    URL.revokeObjectURL(objectUrl);
+    throw error;
+  }
+}
+
 function replaceExtension(name: string, type: string) {
   const extension = type === "image/webp" ? "webp" : type === "image/png" ? "png" : "jpg";
   return `${name.replace(/\.[^.]+$/, "") || "weather"}.${extension}`;
@@ -19,11 +62,11 @@ function canvasToBlob(canvas: HTMLCanvasElement, type: string) {
 }
 
 export async function optimizeReportImage(file: File) {
-  const bitmap = await createImageBitmap(file, { imageOrientation: "from-image" });
+  const image = await decodeImage(file);
   try {
-    const scale = Math.min(1, MAX_IMAGE_EDGE / Math.max(bitmap.width, bitmap.height));
-    const width = Math.max(1, Math.round(bitmap.width * scale));
-    const height = Math.max(1, Math.round(bitmap.height * scale));
+    const scale = Math.min(1, MAX_IMAGE_EDGE / Math.max(image.width, image.height));
+    const width = Math.max(1, Math.round(image.width * scale));
+    const height = Math.max(1, Math.round(image.height * scale));
     if (scale === 1 && file.size <= 2 * 1024 * 1024) return file;
 
     const canvas = document.createElement("canvas");
@@ -31,7 +74,7 @@ export async function optimizeReportImage(file: File) {
     canvas.height = height;
     const context = canvas.getContext("2d");
     if (!context) throw new Error("사진을 최적화하지 못했어요.");
-    context.drawImage(bitmap, 0, 0, width, height);
+    context.drawImage(image.source, 0, 0, width, height);
 
     const blob = await canvasToBlob(canvas, file.type);
     if (blob.size >= file.size) return file;
@@ -40,23 +83,23 @@ export async function optimizeReportImage(file: File) {
       lastModified: file.lastModified,
     });
   } finally {
-    bitmap.close();
+    image.dispose();
   }
 }
 
 export async function optimizeAvatarImage(file: File) {
-  const bitmap = await createImageBitmap(file, { imageOrientation: "from-image" });
+  const image = await decodeImage(file);
   try {
-    const cropSize = Math.min(bitmap.width, bitmap.height);
-    const sourceX = Math.round((bitmap.width - cropSize) / 2);
-    const sourceY = Math.round((bitmap.height - cropSize) / 2);
+    const cropSize = Math.min(image.width, image.height);
+    const sourceX = Math.round((image.width - cropSize) / 2);
+    const sourceY = Math.round((image.height - cropSize) / 2);
     const canvas = document.createElement("canvas");
     canvas.width = AVATAR_EDGE;
     canvas.height = AVATAR_EDGE;
     const context = canvas.getContext("2d");
     if (!context) throw new Error("프로필 사진을 준비하지 못했어요.");
     context.drawImage(
-      bitmap,
+      image.source,
       sourceX,
       sourceY,
       cropSize,
@@ -77,6 +120,6 @@ export async function optimizeAvatarImage(file: File) {
       lastModified: file.lastModified,
     });
   } finally {
-    bitmap.close();
+    image.dispose();
   }
 }

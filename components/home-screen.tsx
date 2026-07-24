@@ -21,7 +21,7 @@ import { useAuthStore } from "@/store/auth-store";
 
 export function HomeScreen() {
   const router = useRouter();
-  const { location, setLocation, isDetecting, detectionError, needsManualInput, setNeedsManualInput, detectLocation } = useCurrentLocation();
+  const { location, setLocation, isDetecting, detectionError, needsManualInput, setNeedsManualInput, detectLocation } = useCurrentLocation({ refreshOnResume: true });
   const [isUserPanelOpen, setIsUserPanelOpen] = useState(false);
   const [isFooterReached, setIsFooterReached] = useState(false);
   const isMember = useAuthStore((state) => state.user.type === "MEMBER");
@@ -63,6 +63,7 @@ export function HomeScreen() {
   }, []);
 
   const items = reports.data?.pages.flatMap((page) => page.reports) ?? [];
+  const isEmptyFeed = Boolean(reports.data && items.length === 0);
   const refreshWeather = async () => {
     await Promise.all([summary.refetch(), reports.refetch()]);
   };
@@ -79,7 +80,7 @@ export function HomeScreen() {
     else setIsUserPanelOpen(true);
   };
   return (
-    <div className={`page ${isFooterReached ? "home-footer-reached" : ""}`}>
+    <div className={`page ${isFooterReached ? "home-footer-reached" : ""} ${isEmptyFeed ? "home-empty" : ""}`}>
       <AppHeader location={locationLabel} isDetecting={isDetecting && !needsManualInput} onLocationClick={() => setNeedsManualInput(true)} onUserClick={openUserArea} />
       {hasWeatherData && hasWeatherError && <ConnectionNotice onRetry={refreshWeather} isRetrying={summary.isFetching || reports.isFetching} />}
       {showLocationError ? <ErrorState message="현재 동네를 불러오지 못했어요." actionLabel="동네 선택하기" onRetry={() => setNeedsManualInput(true)} /> : showFullWeatherError ? <ErrorState onRetry={refreshWeather} /> : <>
@@ -96,7 +97,7 @@ export function HomeScreen() {
             ? <ReportGridSkeleton columns={2} />
             : null}
       </>}
-      <div ref={loadMoreRef} className="flex h-20 items-center justify-center text-sm text-[#8ba0ae]">
+      <div ref={loadMoreRef} className={`flex items-center justify-center text-sm text-[#8ba0ae] ${isEmptyFeed ? "h-4" : "h-20"}`}>
         {reports.isFetchingNextPage ? "다음 날씨를 불러오는 중…" : !reports.hasNextPage && items.length > 0 ? "모든 날씨를 확인했어요" : null}
       </div>
       <div ref={footerBoundaryRef} className="h-px" aria-hidden="true" />

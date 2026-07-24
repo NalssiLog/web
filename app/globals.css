@@ -34,6 +34,7 @@ button { cursor: pointer; }
 }
 .page { min-height: 100vh; padding: 0 20px 112px; }
 .page.home-footer-reached { padding-bottom: 0; }
+.page.home-empty { min-height: 0; }
 .safe-top { padding-top: max(24px, env(safe-area-inset-top)); }
 .home-cta-inline { padding: 14px 0 18px; }
 .mobile-fixed {

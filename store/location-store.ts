@@ -2,7 +2,7 @@
 
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
-import { DEFAULT_LOCATION_DATA, findSupportedLocation } from "@/lib/constants";
+import { findSupportedLocation } from "@/lib/constants";
 import type { Location } from "@/lib/types";
 
 interface LocationState {
@@ -28,7 +28,7 @@ export const useLocationStore = create<LocationState>()(
         if (state.location?.label === "송파구 잠실동") {
           return {
             ...state,
-            location: { ...DEFAULT_LOCATION_DATA, latitude: 37.4979, longitude: 127.0276 },
+            location: null,
           };
         }
         if (state.location) {

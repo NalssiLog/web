@@ -21,6 +21,8 @@ import { useToastStore } from "@/store/toast-store";
 const ACCEPTED_TYPES = ["image/jpeg", "image/png", "image/webp"];
 const MAX_IMAGE_SIZE = 5 * 1024 * 1024;
 const MAX_SOURCE_IMAGE_SIZE = 20 * 1024 * 1024;
+const REPORT_DRAFT_KEY = "nalssilog-report-draft";
+const REPORT_DRAFT_TTL = 6 * 60 * 60 * 1_000;
 const schema = z.object({
   content: z.string().trim().min(1, "날씨 이야기를 한 글자 이상 적어주세요.").max(100, "글은 100자까지 쓸 수 있어요."),
   temperature: z.enum(["COLD", "FRESH", "HOT"], { message: "체감온도를 골라주세요." }),
@@ -29,6 +31,69 @@ const schema = z.object({
   images: z.array(z.custom<File>()).max(3, "사진은 최대 3장까지 올릴 수 있어요."),
 });
 type ReportFormValues = z.infer<typeof schema>;
+const reportDraftSchema = z.object({
+  updatedAt: z.number(),
+  step: z.union([z.literal(1), z.literal(2)]),
+  selectedReportLocation: z.object({
+    id: z.string().optional(),
+    label: z.string(),
+    fullName: z.string().optional(),
+    shortName: z.string().optional(),
+    latitude: z.number().optional(),
+    longitude: z.number().optional(),
+  }).nullable(),
+  content: z.string(),
+  temperature: z.enum(["COLD", "FRESH", "HOT"]).optional(),
+  precipitation: z.enum(["NONE", "LIGHT", "HEAVY"]).optional(),
+  sunlight: z.enum(["LOW", "MODERATE", "STRONG"]).optional(),
+  hadImages: z.boolean(),
+});
+
+function readReportDraft() {
+  try {
+    const value = window.sessionStorage.getItem(REPORT_DRAFT_KEY);
+    if (!value) return null;
+    const parsed = reportDraftSchema.safeParse(JSON.parse(value));
+    if (!parsed.success || Date.now() - parsed.data.updatedAt > REPORT_DRAFT_TTL) {
+      window.sessionStorage.removeItem(REPORT_DRAFT_KEY);
+      return null;
+    }
+    return parsed.data;
+  } catch {
+    return null;
+  }
+}
+
+function writeReportDraft(draft: z.infer<typeof reportDraftSchema>) {
+  try {
+    window.sessionStorage.setItem(REPORT_DRAFT_KEY, JSON.stringify(draft));
+  } catch {
+    // 저장소가 차단된 인앱브라우저에서는 현재 문서의 폼 상태만 유지한다.
+  }
+}
+
+function clearReportDraft() {
+  try {
+    window.sessionStorage.removeItem(REPORT_DRAFT_KEY);
+  } catch {
+    // 저장소가 차단되어 있으면 제거할 초안도 없다.
+  }
+}
+
+function normalizeSelectedImage(file: File) {
+  if (file.type) return file;
+  const extension = file.name.split(".").pop()?.toLowerCase();
+  const type = extension === "png"
+    ? "image/png"
+    : extension === "webp"
+      ? "image/webp"
+      : extension === "jpg" || extension === "jpeg"
+        ? "image/jpeg"
+        : "";
+  return type
+    ? new File([file], file.name, { type, lastModified: file.lastModified })
+    : file;
+}
 
 interface StatusOption<T extends string> { value: T; label: string }
 
@@ -60,9 +125,10 @@ export function ReportForm() {
   const [isOptimizingImages, setIsOptimizingImages] = useState(false);
   const [isPhotoSourceOpen, setIsPhotoSourceOpen] = useState(false);
   const [uploadProgress, setUploadProgress] = useState<ReportUploadProgress | null>(null);
+  const [isDraftReady, setIsDraftReady] = useState(false);
   const showToast = useToastStore((state) => state.showToast);
   const { location, setLocation, isDetecting, detectionError, needsManualInput, setNeedsManualInput, detectLocation } = useCurrentLocation();
-  const { register, handleSubmit, control, setValue, resetField, formState: { errors } } = useForm<ReportFormValues>({
+  const { register, handleSubmit, control, setValue, reset, resetField, formState: { errors } } = useForm<ReportFormValues>({
     resolver: zodResolver(schema),
     defaultValues: { content: "", images: [] },
   });
@@ -79,6 +145,55 @@ export function ReportForm() {
   const previews = useMemo(() => files.map((file) => ({ file, url: URL.createObjectURL(file) })), [files]);
   useEffect(() => () => previews.forEach(({ url }) => URL.revokeObjectURL(url)), [previews]);
   useEffect(() => () => uploadControllerRef.current?.abort(), []);
+  useEffect(() => {
+    const timeout = window.setTimeout(() => {
+      const draft = readReportDraft();
+      if (draft) {
+        setStep(draft.step);
+        setSelectedReportLocation(draft.selectedReportLocation);
+        reset({
+          content: draft.content,
+          images: [],
+          temperature: draft.temperature,
+          precipitation: draft.precipitation,
+          sunlight: draft.sunlight,
+        });
+        if (draft.hadImages) {
+          showToast("작성 내용을 복원했어요. 보안을 위해 사진은 다시 선택해 주세요.", "INFO");
+        }
+      }
+      setIsDraftReady(true);
+    }, 0);
+    return () => window.clearTimeout(timeout);
+  }, [reset, showToast]);
+  useEffect(() => {
+    if (!isDraftReady) return;
+    const timeout = window.setTimeout(() => {
+      writeReportDraft({
+        updatedAt: Date.now(),
+        step,
+        selectedReportLocation,
+        content,
+        temperature,
+        precipitation,
+        sunlight,
+        hadImages: files.length > 0,
+      });
+    }, 150);
+    return () => window.clearTimeout(timeout);
+  }, [content, files.length, isDraftReady, precipitation, selectedReportLocation, step, sunlight, temperature]);
+  useEffect(() => {
+    const closePhotoSource = () => setIsPhotoSourceOpen(false);
+    const closePhotoSourceWhenVisible = () => {
+      if (document.visibilityState === "visible") closePhotoSource();
+    };
+    window.addEventListener("pageshow", closePhotoSource);
+    document.addEventListener("visibilitychange", closePhotoSourceWhenVisible);
+    return () => {
+      window.removeEventListener("pageshow", closePhotoSource);
+      document.removeEventListener("visibilitychange", closePhotoSourceWhenVisible);
+    };
+  }, []);
 
   const mutation = useMutation({
     mutationFn: (values: ReportFormValues) => {
@@ -90,6 +205,7 @@ export function ReportForm() {
       );
     },
     onSuccess: (report) => {
+      clearReportDraft();
       queryClient.setQueryData(["weather-report", report.id], report);
       queryClient.invalidateQueries({ queryKey: ["weather-reports"] });
       queryClient.invalidateQueries({ queryKey: ["weather-summary"] });
@@ -108,7 +224,7 @@ export function ReportForm() {
   });
 
   const addImages = async (event: ChangeEvent<HTMLInputElement>) => {
-    const requested = Array.from(event.target.files ?? []);
+    const requested = Array.from(event.target.files ?? []).map(normalizeSelectedImage);
     event.target.value = "";
     const remainingSlots = Math.max(0, 3 - files.length);
     const selected = requested.slice(0, remainingSlots);
