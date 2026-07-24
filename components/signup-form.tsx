@@ -1,5 +1,6 @@
 "use client";
 
+import { useQueryClient } from "@tanstack/react-query";
 import { ArrowLeft, Check } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
@@ -19,6 +20,7 @@ const providerLabel: Record<SocialProvider, string> = {
 
 export function SignupForm() {
   const router = useRouter();
+  const queryClient = useQueryClient();
   const user = useAuthStore((state) => state.user);
   const hasCheckedServerSession = useAuthStore((state) => state.hasCheckedServerSession);
   const provider = useAuthStore((state) => state.pendingSignupProvider);
@@ -49,6 +51,7 @@ export function SignupForm() {
 
     void authApi.getMe().then((session) => {
       if (cancelled) return;
+      queryClient.setQueryData(["auth", "me"], session);
       if (session.result === "SUCCESS" && session.authenticated && session.user) {
         setServerUser(session.user);
         setPendingSignupProvider(undefined);
@@ -69,7 +72,7 @@ export function SignupForm() {
     return () => {
       cancelled = true;
     };
-  }, [expireSignupSession, provider, router, setPendingSignupProvider, setServerUser]);
+  }, [expireSignupSession, provider, queryClient, router, setPendingSignupProvider, setServerUser]);
 
   const cancel = () => {
     setPendingSignupProvider(undefined);
@@ -88,6 +91,7 @@ export function SignupForm() {
       });
       const session = await authApi.getMe();
       if (!session.authenticated || !session.user) throw new Error("회원가입 후 로그인 상태가 없어요.");
+      queryClient.setQueryData(["auth", "me"], session);
       setServerUser(session.user);
       setPendingSignupProvider(undefined);
       showToast("회원가입이 완료됐어요.", "SUCCESS");

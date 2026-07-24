@@ -1,5 +1,6 @@
 "use client";
 
+import { useQueryClient } from "@tanstack/react-query";
 import { LoaderCircle } from "lucide-react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
@@ -32,6 +33,7 @@ function getOAuthFailureMessage(code: string | null) {
 
 export function AuthCallbackScreen() {
   const router = useRouter();
+  const queryClient = useQueryClient();
   const searchParams = useSearchParams();
   const setServerUser = useAuthStore((state) => state.setServerUser);
   const setPendingSignupProvider = useAuthStore((state) => state.setPendingSignupProvider);
@@ -47,6 +49,7 @@ export function AuthCallbackScreen() {
     const result: OAuthCallbackResult = isOAuthCallbackResult(callbackResult) ? callbackResult : "FAILED";
 
     void authApi.getMe().then((session) => {
+      queryClient.setQueryData(["auth", "me"], session);
       if (session.result === "SUCCESS" && session.authenticated && session.user) {
         setServerUser(session.user);
         const code = searchParams.get("code");
@@ -92,7 +95,7 @@ export function AuthCallbackScreen() {
       showToast("로그인 상태를 확인하지 못했어요.", "ERROR");
       router.replace("/");
     });
-  }, [router, searchParams, setPendingSignupProvider, setServerUser, showToast]);
+  }, [queryClient, router, searchParams, setPendingSignupProvider, setServerUser, showToast]);
 
   const consent = async () => {
     setIsSubmitting(true);

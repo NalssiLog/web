@@ -100,7 +100,7 @@ export function MyPage() {
       </section>
 
       <section className="px-5 pt-0">
-        <div className="mb-3 flex h-11 items-center justify-start border-b-2 border-[#45ace4] pl-1 text-[#268fc7]" aria-label="작성한 제보"><Grid3X3 size={19} strokeWidth={2.2} /></div>
+        <div className="mb-3 grid h-11 grid-cols-3 gap-1.5 border-b-2 border-[#45ace4] text-[#268fc7]" aria-label="작성한 제보"><span className="flex items-center justify-center"><Grid3X3 size={19} strokeWidth={2.2} /></span><span /><span /></div>
         <MyReportList memberId={user.id} columns={3} />
       </section>
 

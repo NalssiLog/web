@@ -162,11 +162,15 @@ export function ReportDetail() {
     <article className="min-h-screen pb-28">
       <div className="px-5"><DetailHeader onBack={() => router.back()} title={getLocationName(item.location, "full")} /></div>
       <header className="flex items-center gap-3 px-5 pb-5">
-        <span className="flex size-11 shrink-0 items-center justify-center rounded-full bg-white bg-cover bg-center text-[#45ace4] shadow-sm shadow-[#b8d6e6]/20" style={item.author.type === "MEMBER" && item.author.avatarUrl ? { backgroundImage: `url(${item.author.avatarUrl})` } : undefined} aria-hidden="true">{item.author.type === "ANONYMOUS" ? "☁️" : !item.author.avatarUrl ? <UserRound size={21} /> : null}</span>
-        <div className="min-w-0 flex-1">{authorHref ? <Link href={authorHref} className="font-extrabold transition-colors hover:text-[#268fc7]">{author}</Link> : <p className="font-extrabold">{author}</p>}<p className="mt-0.5 text-xs font-semibold text-[#718594]">{format(new Date(item.createdAt), "M월 d일 a h:mm", { locale: ko })}</p></div>
-        {canDelete && <button type="button" disabled={deleteReport.isPending} onClick={() => setIsDeleteModalOpen(true)} className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-white text-[#b56868] shadow-sm transition hover:bg-[#fff5f3] hover:text-[#c95e5e] disabled:opacity-50" aria-label="제보 삭제"><Trash2 size={16} /></button>}
-        <button type="button" disabled={thanks.isPending} onClick={() => thanks.mutate()} aria-pressed={item.isThanked} className={`flex shrink-0 items-center justify-center gap-1.5 rounded-[13px] border-2 px-3 py-2 text-xs font-extrabold transition-colors duration-150 disabled:cursor-wait ${item.isThanked ? "border-[#75c4ec] bg-[#e7f6ff] text-[#268fc7]" : "border-[#b9ddf0] bg-white text-[#45ace4]"}`}>
-          <Heart size={15} fill={item.isThanked ? "currentColor" : "none"} className="-translate-y-px" /> 감사해요! <span className="font-bold">{formatThanksCount(item.thanksCount)}</span>
+        {authorHref ? <Link href={authorHref} className="flex min-w-0 flex-1 items-center gap-3 rounded-2xl transition-colors hover:text-[#268fc7]" aria-label={`${author}의 마이페이지로 이동`}>
+          <span className="flex size-11 shrink-0 items-center justify-center rounded-full bg-white bg-cover bg-center text-[#45ace4] shadow-sm shadow-[#b8d6e6]/20" style={item.author.type === "MEMBER" && item.author.avatarUrl ? { backgroundImage: `url(${item.author.avatarUrl})` } : undefined} aria-hidden="true">{item.author.type === "MEMBER" && !item.author.avatarUrl ? <UserRound size={21} /> : null}</span>
+          <span className="min-w-0"><span className="block truncate font-extrabold">{author}</span><span className="mt-0.5 block text-xs font-semibold text-[#718594]">{format(new Date(item.createdAt), "M월 d일 a h:mm", { locale: ko })}</span></span>
+        </Link> : <div className="flex min-w-0 flex-1 items-center gap-3">
+          <span className="flex size-11 shrink-0 items-center justify-center rounded-full bg-white text-[#45ace4] shadow-sm shadow-[#b8d6e6]/20" aria-hidden="true">☁️</span>
+          <span className="min-w-0"><span className="block truncate font-extrabold">{author}</span><span className="mt-0.5 block text-xs font-semibold text-[#718594]">{format(new Date(item.createdAt), "M월 d일 a h:mm", { locale: ko })}</span></span>
+        </div>}
+        <button type="button" disabled={thanks.isPending} onClick={() => thanks.mutate()} aria-pressed={item.isThanked} aria-label={`감사해요 ${formatThanksCount(item.thanksCount)}개`} className={`flex shrink-0 items-center justify-center gap-1.5 rounded-[13px] border-2 px-3 py-2 text-xs font-extrabold transition-colors duration-150 disabled:cursor-wait ${item.isThanked ? "border-[#75c4ec] bg-[#e7f6ff] text-[#268fc7]" : "border-[#b9ddf0] bg-white text-[#45ace4]"}`}>
+          <Heart size={17} fill={item.isThanked ? "currentColor" : "none"} className="-translate-y-px" /><span className="font-bold">{formatThanksCount(item.thanksCount)}</span>
         </button>
       </header>
 
@@ -179,6 +183,7 @@ export function ReportDetail() {
           <StatusPill icon={<Sun size={18} />} value={statusLabel(SUNLIGHT_OPTIONS, item.sunlight)} />
         </div>
         <p className="mt-3 whitespace-pre-wrap rounded-[17px] bg-white p-4 text-[15px] font-medium leading-6 text-[#29495c] shadow-sm shadow-[#b8d6e6]/20">{item.content}</p>
+        {canDelete && <div className="mt-3 flex justify-end"><button type="button" disabled={deleteReport.isPending} onClick={() => setIsDeleteModalOpen(true)} className="flex items-center gap-1.5 rounded-xl px-3 py-2 text-xs font-extrabold text-[#b56868] transition hover:bg-[#fff5f3] hover:text-[#c95e5e] disabled:opacity-50"><Trash2 size={15} /> 제보 삭제</button></div>}
       </div>
       {isDeleteModalOpen && <ReportDeleteConfirmModal isSubmitting={deleteReport.isPending} onClose={() => setIsDeleteModalOpen(false)} onConfirm={() => deleteReport.mutate()} />}
     </article>

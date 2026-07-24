@@ -23,6 +23,7 @@ const STATE_CHANGING_METHODS = new Set(["POST", "PUT", "PATCH", "DELETE"]);
 const CSRF_COOKIE_NAME = process.env.NEXT_PUBLIC_APP_ENV === "development"
   ? "DEV-XSRF-TOKEN"
   : "XSRF-TOKEN";
+let sessionRefreshPromise: Promise<Response> | null = null;
 
 async function fetchApi(input: RequestInfo | URL, init?: RequestInit) {
   try {
@@ -57,11 +58,12 @@ async function readErrorBody(response: Response) {
 async function refreshCsrfToken() {
   await fetchApi(getApiUrl("/api/auth/me"), {
     method: "GET",
+    cache: "no-store",
     credentials: "include",
   });
 }
 
-async function refreshSession() {
+async function executeSessionRefresh() {
   const execute = () => {
     const headers = new Headers();
     const csrfToken = getCookie(CSRF_COOKIE_NAME);
@@ -83,6 +85,15 @@ async function refreshSession() {
     }
   }
   return response;
+}
+
+function refreshSession() {
+  if (!sessionRefreshPromise) {
+    sessionRefreshPromise = executeSessionRefresh().finally(() => {
+      sessionRefreshPromise = null;
+    });
+  }
+  return sessionRefreshPromise;
 }
 
 export async function apiRequest<T>(path: string, init: RequestInit = {}): Promise<T> {
@@ -116,6 +127,13 @@ export async function apiRequest<T>(path: string, init: RequestInit = {}): Promi
     if (refreshResponse.ok) {
       httpLogger.debug("auth_session_refreshed", { path: sanitizeUrl(getApiUrl(path)) });
       response = await execute();
+    } else {
+      const refreshError = await readErrorBody(refreshResponse);
+      httpLogger.warn("auth_session_refresh_failed", {
+        path: sanitizeUrl(getApiUrl(path)),
+        status: refreshResponse.status,
+        code: refreshError?.code ?? `HTTP_${refreshResponse.status}`,
+      });
     }
   }
 

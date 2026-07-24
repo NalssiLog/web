@@ -75,7 +75,7 @@ function normalizeAuthMe(response: RawAuthMeResponse): AuthMeResponse {
 export const authApi = {
   checkHealth: () => apiRequest<{ status: "UP" }>("/api/health", { signal: AbortSignal.timeout(5_000) }),
   getLoginUrl: (provider: SocialProvider) => getApiUrl(`/api/auth/login/${providerPath[provider]}`),
-  getMe: async () => normalizeAuthMe(await apiRequest<RawAuthMeResponse>("/api/auth/me")),
+  getMe: async () => normalizeAuthMe(await apiRequest<RawAuthMeResponse>("/api/auth/me", { cache: "no-store" })),
   signup: (body: SignupRequest) => jsonRequest<unknown>("/api/auth/signup", "POST", body),
   refresh: () => jsonRequest<void>("/api/auth/refresh", "POST"),
   logout: () => jsonRequest<void>("/api/auth/logout", "POST"),
