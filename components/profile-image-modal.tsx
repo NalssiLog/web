@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState, type ChangeEvent } from "react";
 import { ImagePlus, UserRound, X } from "lucide-react";
 import { DEFAULT_PROFILE_IMAGES } from "@/lib/constants";
+import { isSupportedAvatarSource, normalizeSelectedImage } from "@/lib/image";
 import { useToastStore } from "@/store/toast-store";
 
 const MAX_SOURCE_IMAGE_SIZE = 20 * 1024 * 1024;
@@ -50,11 +51,12 @@ export function ProfileImageModal({
   };
 
   const uploadImage = (event: ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
+    const selectedFile = event.target.files?.[0];
     event.target.value = "";
-    if (!file) return;
-    if (!(["image/jpeg", "image/png", "image/webp"].includes(file.type))) {
-      showToast("JPG, PNG, WEBP 이미지만 선택할 수 있어요.", "ERROR");
+    if (!selectedFile) return;
+    const file = normalizeSelectedImage(selectedFile);
+    if (!isSupportedAvatarSource(file)) {
+      showToast("JPG, PNG, WEBP, HEIC 사진을 선택해 주세요.", "ERROR");
       return;
     }
     if (file.size > MAX_SOURCE_IMAGE_SIZE) {
@@ -106,7 +108,7 @@ export function ProfileImageModal({
         <div className="mt-3">
           <label className="flex w-full cursor-pointer items-center justify-center gap-2 rounded-2xl bg-white px-4 py-3.5 text-sm font-extrabold transition hover:text-[#238fc9]">
             <ImagePlus size={18} className="text-[#45ace4]" /> 내 사진에서 선택
-            <input type="file" disabled={isSaving} accept="image/jpeg,image/png,image/webp" onChange={uploadImage} className="sr-only" />
+            <input type="file" disabled={isSaving} accept="image/*" onChange={uploadImage} className="sr-only" />
           </label>
         </div>
         <button type="button" disabled={!selection || isSaving} onClick={() => void saveProfile()} className="mt-3 w-full rounded-2xl bg-[#45ace4] py-3.5 text-sm font-extrabold text-white transition hover:bg-[#299bd8] disabled:cursor-not-allowed disabled:bg-[#b9d5e4]">{isSaving ? "저장하는 중…" : "저장"}</button>

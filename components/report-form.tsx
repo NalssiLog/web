@@ -13,7 +13,7 @@ import { PhotoSourceSheet } from "@/components/photo-source-sheet";
 import { useCurrentLocation } from "@/hooks/use-current-location";
 import { weatherApi } from "@/lib/api";
 import { PRECIPITATION_OPTIONS, SUGGESTED_MESSAGES, SUNLIGHT_OPTIONS, TEMPERATURE_OPTIONS, getLocationName } from "@/lib/constants";
-import { optimizeReportImage } from "@/lib/image";
+import { normalizeSelectedImage, optimizeReportImage } from "@/lib/image";
 import { getTextLength, truncateText } from "@/lib/text";
 import type { CreateReportInput, Location, PrecipitationStatus, ReportUploadProgress, SunlightStatus, TemperatureStatus } from "@/lib/types";
 import { useToastStore } from "@/store/toast-store";
@@ -78,21 +78,6 @@ function clearReportDraft() {
   } catch {
     // 저장소가 차단되어 있으면 제거할 초안도 없다.
   }
-}
-
-function normalizeSelectedImage(file: File) {
-  if (file.type) return file;
-  const extension = file.name.split(".").pop()?.toLowerCase();
-  const type = extension === "png"
-    ? "image/png"
-    : extension === "webp"
-      ? "image/webp"
-      : extension === "jpg" || extension === "jpeg"
-        ? "image/jpeg"
-        : "";
-  return type
-    ? new File([file], file.name, { type, lastModified: file.lastModified })
-    : file;
 }
 
 interface StatusOption<T extends string> { value: T; label: string }
