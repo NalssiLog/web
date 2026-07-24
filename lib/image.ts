@@ -2,12 +2,49 @@ const MAX_IMAGE_EDGE = 2048;
 const OUTPUT_QUALITY = 0.86;
 const AVATAR_EDGE = 512;
 const MAX_AVATAR_SIZE = 2 * 1024 * 1024;
+const AVATAR_SOURCE_TYPES = new Set([
+  "image/jpeg",
+  "image/png",
+  "image/webp",
+  "image/heic",
+  "image/heif",
+]);
+
+const IMAGE_TYPE_BY_EXTENSION: Record<string, string> = {
+  heic: "image/heic",
+  heif: "image/heif",
+  jfif: "image/jpeg",
+  jpeg: "image/jpeg",
+  jpg: "image/jpeg",
+  png: "image/png",
+  webp: "image/webp",
+};
 
 interface DecodedImage {
   source: CanvasImageSource;
   width: number;
   height: number;
   dispose: () => void;
+}
+
+export function normalizeSelectedImage(file: File) {
+  const declaredType = file.type.trim().toLowerCase();
+  const normalizedDeclaredType = declaredType === "image/jpg" ? "image/jpeg" : declaredType;
+  const extension = file.name.split(".").pop()?.toLowerCase() ?? "";
+  const inferredType = IMAGE_TYPE_BY_EXTENSION[extension] ?? "";
+  const normalizedType = normalizedDeclaredType.startsWith("image/")
+    ? normalizedDeclaredType
+    : inferredType;
+
+  if (!normalizedType || normalizedType === file.type) return file;
+  return new File([file], file.name, {
+    type: normalizedType,
+    lastModified: file.lastModified,
+  });
+}
+
+export function isSupportedAvatarSource(file: File) {
+  return AVATAR_SOURCE_TYPES.has(file.type.trim().toLowerCase());
 }
 
 async function decodeImage(file: File): Promise<DecodedImage> {

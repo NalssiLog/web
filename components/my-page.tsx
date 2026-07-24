@@ -56,6 +56,14 @@ export function MyPage() {
         : await memberApi.updateCustomAvatar(await optimizeAvatarImage(selection.file));
       setProfileImage(resolveProfileImage(updatedAccount.avatar.profileImageUrl ?? updatedAccount.avatar.value));
       queryClient.setQueryData(["members", "me"], updatedAccount);
+      void Promise.all([
+        queryClient.invalidateQueries({ queryKey: ["auth", "me"] }),
+        queryClient.invalidateQueries({ queryKey: ["weather-reports"] }),
+        queryClient.invalidateQueries({ queryKey: ["weather-report"] }),
+        queryClient.invalidateQueries({ queryKey: ["my-weather-reports"] }),
+        queryClient.invalidateQueries({ queryKey: ["member-weather-reports"] }),
+        queryClient.invalidateQueries({ queryKey: ["member-profile", updatedAccount.id] }),
+      ]);
       showToast("프로필 사진을 변경했어요.", "SUCCESS");
       return true;
     } catch (error) {
