@@ -11,7 +11,7 @@ export const TEMPERATURE_OPTIONS: ReadonlyArray<{
   emoji: string;
 }> = [
   { value: "COLD", label: "추워요", emoji: "🥶" },
-  { value: "FRESH", label: "신선해요", emoji: "😊" },
+  { value: "FRESH", label: "선선해요", emoji: "😊" },
   { value: "HOT", label: "더워요", emoji: "🥵" },
 ];
 
