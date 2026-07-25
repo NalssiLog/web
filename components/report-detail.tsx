@@ -1,8 +1,6 @@
 "use client";
 
 import { useMutation, useQuery, useQueryClient, type InfiniteData, type QueryKey } from "@tanstack/react-query";
-import { format } from "date-fns";
-import { ko } from "date-fns/locale";
 import { ArrowLeft, ChevronLeft, ChevronRight, CloudRain, Heart, Sun, Thermometer, Trash2, UserRound } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
@@ -13,6 +11,7 @@ import { ReportDeleteConfirmModal } from "@/components/report-delete-confirm-mod
 import { weatherApi } from "@/lib/api";
 import { ApiError } from "@/lib/api/http-client";
 import { PRECIPITATION_OPTIONS, SUNLIGHT_OPTIONS, TEMPERATURE_OPTIONS, formatThanksCount, getLocationName, statusLabel } from "@/lib/constants";
+import { formatReportDateTime } from "@/lib/date";
 import type { ReportPage, ThanksState, WeatherReport } from "@/lib/types";
 import { useToastStore } from "@/store/toast-store";
 import { useAuthStore } from "@/store/auth-store";
@@ -164,10 +163,10 @@ export function ReportDetail() {
       <header className="flex items-center gap-3 px-5 pb-5">
         {authorHref ? <Link href={authorHref} className="flex min-w-0 flex-1 items-center gap-3 rounded-2xl transition-colors hover:text-[#268fc7]" aria-label={`${author}의 마이페이지로 이동`}>
           <span className="flex size-11 shrink-0 items-center justify-center rounded-full bg-white bg-cover bg-center text-[#45ace4] shadow-sm shadow-[#b8d6e6]/20" style={item.author.type === "MEMBER" && item.author.avatarUrl ? { backgroundImage: `url(${item.author.avatarUrl})` } : undefined} aria-hidden="true">{item.author.type === "MEMBER" && !item.author.avatarUrl ? <UserRound size={21} /> : null}</span>
-          <span className="min-w-0"><span className="block truncate font-extrabold">{author}</span><span className="mt-0.5 block text-xs font-semibold text-[#718594]">{format(new Date(item.createdAt), "M월 d일 a h:mm", { locale: ko })}</span></span>
+          <span className="min-w-0"><span className="block truncate font-extrabold">{author}</span><span className="mt-0.5 block text-xs font-semibold text-[#718594]">{formatReportDateTime(item.createdAt)}</span></span>
         </Link> : <div className="flex min-w-0 flex-1 items-center gap-3">
           <span className="flex size-11 shrink-0 items-center justify-center rounded-full bg-white text-[#45ace4] shadow-sm shadow-[#b8d6e6]/20" aria-hidden="true">☁️</span>
-          <span className="min-w-0"><span className="block truncate font-extrabold">{author}</span><span className="mt-0.5 block text-xs font-semibold text-[#718594]">{format(new Date(item.createdAt), "M월 d일 a h:mm", { locale: ko })}</span></span>
+          <span className="min-w-0"><span className="block truncate font-extrabold">{author}</span><span className="mt-0.5 block text-xs font-semibold text-[#718594]">{formatReportDateTime(item.createdAt)}</span></span>
         </div>}
         <button type="button" disabled={thanks.isPending} onClick={() => thanks.mutate()} aria-pressed={item.isThanked} aria-label={`감사해요 ${formatThanksCount(item.thanksCount)}개`} className={`flex shrink-0 items-center justify-center gap-1.5 rounded-[13px] border-2 px-3 py-2 text-xs font-extrabold transition-colors duration-150 disabled:cursor-wait ${item.isThanked ? "border-[#75c4ec] bg-[#e7f6ff] text-[#268fc7]" : "border-[#b9ddf0] bg-white text-[#45ace4]"}`}>
           <Heart size={17} fill={item.isThanked ? "currentColor" : "none"} className="-translate-y-px" /><span className="font-bold">{formatThanksCount(item.thanksCount)}</span>
