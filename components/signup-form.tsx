@@ -111,10 +111,10 @@ export function SignupForm() {
 
   return (
     <main className="min-h-screen pb-10">
-      <header className="safe-top flex items-center justify-between px-5 pb-4">
-        <button type="button" onClick={cancel} className="icon-button" aria-label="회원가입 취소"><ArrowLeft size={21} /></button>
+      <header className="safe-top spacious-page-header flex items-center justify-between px-5 pb-2">
+        <button type="button" onClick={cancel} className="header-back-button" aria-label="회원가입 취소"><ArrowLeft size={18} /></button>
         <h1 className="text-lg font-extrabold">회원가입</h1>
-        <span className="w-[42px]" />
+        <span className="w-9" />
       </header>
 
       <form onSubmit={(event) => { event.preventDefault(); submit(); }} className="px-5 pt-4">

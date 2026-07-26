@@ -39,8 +39,8 @@ export function MyReportList({ memberId, columns = 2, publicProfile = false }: {
   }
 
   if (!reportItems.length) {
-    return <div className="px-5 pb-9 pt-6 text-center"><p className="text-sm font-extrabold">아직 작성한 제보가 없어요.</p><p className="mt-1 text-xs font-semibold text-[#718594]">{publicProfile ? "아직 공개된 날씨 제보가 없어요." : "날씨를 제보하면 여기에서 확인할 수 있어요."}</p></div>;
+    return <div className="px-5 pb-3 pt-6 text-center"><p className="text-sm font-extrabold">아직 작성한 제보가 없어요.</p><p className="mt-1 text-xs font-semibold text-[#718594]">{publicProfile ? "아직 공개된 날씨 제보가 없어요." : "날씨를 제보하면 여기에서 확인할 수 있어요."}</p></div>;
   }
 
-  return <><div className={`grid ${columns === 3 ? "grid-cols-3 gap-1.5" : "grid-cols-2 gap-3"}`}>{reportItems.map((report) => <ReportCard key={report.id} report={report} compact={columns === 3} />)}</div><div ref={loadMoreRef} className="flex h-12 items-center justify-center" aria-hidden={!reports.isFetchingNextPage}>{reports.isFetchingNextPage && <LoaderCircle size={18} className="animate-spin text-[#45ace4]" />}</div></>;
+  return <><div className={`grid ${columns === 3 ? "grid-cols-3 gap-1.5" : "grid-cols-2 gap-3"}`}>{reportItems.map((report) => <ReportCard key={report.id} report={report} compact={columns === 3} />)}</div><div ref={loadMoreRef} className={`flex items-center justify-center ${reports.isFetchingNextPage ? "h-8" : "h-3"}`} aria-hidden={!reports.isFetchingNextPage}>{reports.isFetchingNextPage && <LoaderCircle size={18} className="animate-spin text-[#45ace4]" />}</div></>;
 }

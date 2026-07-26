@@ -160,13 +160,17 @@ export function ReportDetail() {
   const canDelete = item.isMine;
 
   return (
-    <article className="min-h-screen pb-28">
+    <article className="min-h-screen pb-8">
       <div className="px-5"><DetailHeader onBack={() => router.back()} title={getLocationName(item.location, "full")} onTitleClick={() => { setLocation(item.location); router.push("/"); }} /></div>
       <header className="flex items-center gap-3 px-5 pb-5">
-        {authorHref ? <Link href={authorHref} className="flex min-w-0 flex-1 items-center gap-3 rounded-2xl transition-colors hover:text-[#268fc7]" aria-label={`${author}의 마이페이지로 이동`}>
-          <span className="flex size-11 shrink-0 items-center justify-center rounded-full bg-white bg-cover bg-center text-[#45ace4] shadow-sm shadow-[#b8d6e6]/20" style={item.author.type === "MEMBER" && item.author.avatarUrl ? { backgroundImage: `url(${item.author.avatarUrl})` } : undefined} aria-hidden="true">{item.author.type === "MEMBER" && !item.author.avatarUrl ? <UserRound size={21} /> : null}</span>
-          <span className="min-w-0"><span className="block truncate font-extrabold">{author}</span><span className="mt-0.5 block text-xs font-semibold text-[#718594]">{formatReportDateTime(item.createdAt)}</span></span>
-        </Link> : <div className="flex min-w-0 flex-1 items-center gap-3">
+        {authorHref ? <div className="flex min-w-0 flex-1 items-center gap-3">
+          <Link href={authorHref} className="shrink-0 rounded-full transition-opacity hover:opacity-80" aria-label={`${author}의 프로필로 이동`}>
+            <span className="flex size-11 items-center justify-center rounded-full bg-white bg-cover bg-center text-[#45ace4] shadow-sm shadow-[#b8d6e6]/20" style={item.author.type === "MEMBER" && item.author.avatarUrl ? { backgroundImage: `url(${item.author.avatarUrl})` } : undefined} aria-hidden="true">{item.author.type === "MEMBER" && !item.author.avatarUrl ? <UserRound size={21} /> : null}</span>
+          </Link>
+          <Link href={authorHref} className="min-w-0 rounded-lg transition-colors hover:text-[#268fc7]" aria-label={`${author}의 프로필로 이동`}>
+            <span className="block truncate font-extrabold">{author}</span><span className="mt-0.5 block text-xs font-semibold text-[#718594]">{formatReportDateTime(item.createdAt)}</span>
+          </Link>
+        </div> : <div className="flex min-w-0 flex-1 items-center gap-3">
           <span className="flex size-11 shrink-0 items-center justify-center rounded-full bg-white text-[#45ace4] shadow-sm shadow-[#b8d6e6]/20" aria-hidden="true">☁️</span>
           <span className="min-w-0"><span className="block truncate font-extrabold">{author}</span><span className="mt-0.5 block text-xs font-semibold text-[#718594]">{formatReportDateTime(item.createdAt)}</span></span>
         </div>}
@@ -192,7 +196,7 @@ export function ReportDetail() {
 }
 
 function DetailHeader({ onBack, title, onTitleClick }: { onBack: () => void; title?: string; onTitleClick?: () => void }) {
-  return <div className="safe-top grid grid-cols-[42px_minmax(0,1fr)_42px] items-center pb-5"><button type="button" onClick={onBack} className="icon-button" aria-label="뒤로 가기"><ArrowLeft size={21} /></button>{title ? onTitleClick ? <button type="button" onClick={onTitleClick} className="break-keep px-2 text-center text-sm font-extrabold leading-5 transition-colors hover:text-[#268fc7]" aria-label={`${title} 날씨 홈으로 이동`}>{title}</button> : <p className="break-keep px-2 text-center text-sm font-extrabold leading-5">{title}</p> : <span className="skeleton mx-auto h-5 w-36 rounded" aria-label="지역명 불러오는 중" />}<span /></div>;
+  return <div className="safe-top spacious-page-header grid grid-cols-[36px_minmax(0,1fr)_36px] items-center pb-2"><button type="button" onClick={onBack} className="header-back-button" aria-label="뒤로 가기"><ArrowLeft size={18} /></button>{title ? onTitleClick ? <button type="button" onClick={onTitleClick} className="w-fit max-w-full justify-self-center break-keep text-center text-base leading-5 transition-colors hover:text-[#268fc7]" aria-label={`${title} 날씨 홈으로 이동`}><span className="font-extrabold">{title}</span></button> : <p className="break-keep px-2 text-center text-base font-extrabold leading-5">{title}</p> : <span className="skeleton mx-auto h-5 w-36 rounded" aria-label="지역명 불러오는 중" />}<span /></div>;
 }
 
 function StatusPill({ icon, value }: { icon: ReactNode; value: string }) {
@@ -223,7 +227,7 @@ function PhotoCarousel({ images, author }: { images: string[]; author: string })
   };
 
   return (
-    <div className="relative mx-8 overflow-hidden rounded-[24px] bg-[#eaf2f6]">
+    <div className="relative mx-8 overflow-hidden rounded-[24px] border border-[#d2e3ec]">
       <div ref={scrollRef} onScroll={updateIndexAfterScroll} className="flex snap-x snap-mandatory overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
         {images.map((image, index) => <div key={`${image}-${index}`} className="relative aspect-square w-full shrink-0 snap-center"><Image src={image} alt={`${author}의 날씨 사진 ${index + 1}`} fill unoptimized={/^(https?:|blob:|data:)/.test(image)} priority={index === 0} sizes="(max-width: 480px) calc(100vw - 64px), 416px" className="object-cover" /></div>)}
       </div>
@@ -241,7 +245,7 @@ function PhotoCarousel({ images, author }: { images: string[]; author: string })
 
 function DetailSkeleton({ onBack }: { onBack: () => void }) {
   return (
-    <article className="min-h-screen pb-28" aria-busy="true" aria-label="날씨 제보 불러오는 중">
+    <article className="min-h-screen pb-8" aria-busy="true" aria-label="날씨 제보 불러오는 중">
       <div className="px-5"><DetailHeader onBack={onBack} /></div>
 
       <header className="flex items-center gap-3 px-5 pb-5">

@@ -33,7 +33,9 @@ button { cursor: pointer; }
   box-shadow: 0 0 48px rgba(48, 98, 126, .12);
 }
 .page { min-height: 100vh; padding: 0 20px 112px; }
-.safe-top { padding-top: max(24px, env(safe-area-inset-top)); }
+.main-tab-page { padding-bottom: 80px; }
+.safe-top { padding-top: max(8px, env(safe-area-inset-top)); }
+.home-header-top { padding-top: max(9px, env(safe-area-inset-top)); }
 .main-tab-bar {
   position: fixed;
   z-index: 40;
@@ -84,6 +86,36 @@ button { cursor: pointer; }
   border-radius: 14px;
   color: var(--ink);
   background: transparent;
+}
+.header-back-button {
+  display: inline-flex;
+  width: 18px;
+  height: 18px;
+  align-items: center;
+  justify-content: center;
+  border: 0;
+  border-radius: 0;
+  color: var(--ink);
+  background: transparent;
+}
+.header-action-button {
+  display: inline-flex;
+  width: 18px;
+  height: 18px;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  border: 0;
+  border-radius: 0;
+  color: var(--ink);
+  background: transparent;
+}
+.compact-page-header {
+  min-height: calc(44px + max(8px, env(safe-area-inset-top)));
+}
+.spacious-page-header {
+  min-height: calc(44px + max(12px, env(safe-area-inset-top)));
+  padding-top: max(12px, env(safe-area-inset-top));
 }
 .legal-content { color: #526a7a; font-size: 13px; font-weight: 500; line-height: 1.75; }
 .legal-content section + section { margin-top: 28px; }

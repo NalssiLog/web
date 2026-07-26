@@ -13,8 +13,8 @@ export function LegalDocument({
 }) {
   return (
     <main className="min-h-screen px-5 pb-10">
-      <header className="safe-top grid grid-cols-[42px_1fr_42px] items-center pb-5">
-        <Link href="/" className="icon-button" aria-label="홈으로 돌아가기"><ArrowLeft size={21} /></Link>
+      <header className="safe-top compact-page-header grid grid-cols-[36px_1fr_36px] items-center pb-2">
+        <Link href="/" className="header-back-button" aria-label="홈으로 돌아가기"><ArrowLeft size={18} /></Link>
         <h1 className="text-center text-lg font-extrabold">{title}</h1>
         <span />
       </header>
