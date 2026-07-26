@@ -15,7 +15,7 @@ export function ReportCard({ report, compact = false }: { report: WeatherReport;
   const unoptimizedImage = /^(https?:|blob:|data:)/.test(imageSource);
   const locationName = getLocationName(report.location, "short");
   return (
-    <Link href={`/reports/${report.id}`} className={`group relative aspect-square overflow-hidden bg-[#e8f3f8] ${compact ? "rounded-lg" : "rounded-[22px]"}`}>
+    <Link href={`/reports/${report.id}`} className={`group relative aspect-square overflow-hidden border border-[#d2e3ec] ${compact ? "rounded-lg" : "rounded-[22px]"}`}>
       <Image src={imageSource} alt={`${locationName} 날씨 제보`} fill unoptimized={unoptimizedImage} sizes="(max-width: 480px) 50vw, 220px" className="object-cover transition duration-300 group-active:scale-105" />
       {!compact && <>
         <div className="absolute inset-x-0 bottom-0 flex items-end justify-between gap-2 p-3.5 text-white">
@@ -27,7 +27,6 @@ export function ReportCard({ report, compact = false }: { report: WeatherReport;
         </span>
       </>}
       {compact && <>
-        <div className="absolute inset-x-0 bottom-0 h-1/2 bg-gradient-to-t from-[#102839]/60 to-transparent" />
         <span className="absolute left-2 top-2 z-20 flex max-w-[calc(100%-16px)] items-center gap-0.5 text-[11px] font-semibold text-white drop-shadow-[0_1px_2px_rgba(0,0,0,.8)]">
           <MapPin size={11} className="shrink-0" />
           <span className="break-keep leading-4">{locationName}</span>

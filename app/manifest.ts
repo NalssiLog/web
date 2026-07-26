@@ -12,8 +12,8 @@ export default function manifest(): MetadataRoute.Manifest {
     lang: "ko",
     icons: [
       {
-        src: "/icon.png",
-        sizes: "3000x3000",
+        src: "/brand/날씨로그_아이콘.png",
+        sizes: "531x531",
         type: "image/png",
       },
     ],

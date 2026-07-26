@@ -77,7 +77,7 @@ export function MyPage() {
   }, [hasCheckedServerSession, router, user.type]);
 
   if (!hasCheckedServerSession) {
-    return <main className="min-h-[75dvh] pb-28" aria-busy="true"><header className="safe-top grid grid-cols-[42px_1fr_42px] items-center px-5 pb-3"><span /><div className="skeleton mx-auto h-5 w-20 rounded" /><span /></header><section className="flex items-center gap-5 px-5 py-6"><div className="skeleton size-18 rounded-full" /><div className="skeleton h-4 w-28 rounded" /></section><section className="px-5"><div className="skeleton mb-3 h-11 rounded" /><div className="grid grid-cols-3 gap-1.5">{Array.from({ length: 6 }).map((_, index) => <div key={index} className="skeleton aspect-square rounded-lg" />)}</div></section></main>;
+    return <main className="min-h-[75dvh] pb-[72px]" aria-busy="true"><header className="safe-top spacious-page-header grid grid-cols-[36px_1fr_36px] items-center px-5 pb-2"><span /><div className="skeleton mx-auto h-5 w-20 rounded" /><span /></header><section className="flex items-center gap-5 px-5 pb-6 pt-0"><div className="skeleton size-18 rounded-full" /><div className="skeleton h-4 w-28 rounded" /></section><section className="px-5"><div className="skeleton mb-3 h-11 rounded" /><div className="grid grid-cols-3 gap-1.5">{Array.from({ length: 6 }).map((_, index) => <div key={index} className="skeleton aspect-square rounded-lg" />)}</div></section></main>;
   }
 
   if (user.type !== "MEMBER") {
@@ -85,30 +85,30 @@ export function MyPage() {
   }
 
   return (
-    <main className="min-h-[75dvh] pb-28">
-      <header className="safe-top sticky top-0 z-30 grid grid-cols-[42px_1fr_42px] items-center bg-[#eef9ff] px-5 pb-3">
+    <main className="min-h-[75dvh] pb-[72px]">
+      <header className="safe-top spacious-page-header sticky top-0 z-30 grid grid-cols-[36px_1fr_36px] items-center bg-[#eef9ff] px-5 pb-2">
         <span aria-hidden="true" />
-        <h1 className="text-center text-lg font-extrabold">마이페이지</h1>
-        <button type="button" onClick={() => setIsSettingsOpen(true)} className="icon-button" aria-label="설정 열기"><Settings size={21} /></button>
+        <h1 className="text-center text-lg font-extrabold">프로필</h1>
+        <button type="button" onClick={() => setIsSettingsOpen(true)} className="header-action-button justify-self-end" aria-label="설정 열기"><Settings size={18} /></button>
       </header>
 
-      <section className="px-5 pb-5 pt-3">
+      <section className="px-5 pb-5 pt-0">
         <div className="flex items-center gap-5">
           <div className="relative shrink-0">
             <button type="button" onClick={() => setIsProfilePreviewOpen(true)} className="flex size-18 items-center justify-center rounded-full bg-white bg-cover bg-center text-[#45ace4] shadow-sm" style={avatarUrl ? { backgroundImage: `url(${avatarUrl})` } : undefined} aria-label="프로필 사진 크게 보기">
               {!avatarUrl && <UserRound size={29} />}
             </button>
-            <button type="button" onClick={() => setIsProfileImageOpen(true)} className="absolute bottom-0 right-0 flex size-6.5 items-center justify-center rounded-full border-2 border-[#45ace4] bg-white text-[#45ace4]" aria-label="프로필 사진 수정"><Pencil size={11} /></button>
+            <button type="button" onClick={() => setIsProfileImageOpen(true)} className="absolute -bottom-0.5 -right-0.5 flex size-6 items-center justify-center rounded-full border-2 border-[#45ace4] bg-white text-[#45ace4]" aria-label="프로필 사진 수정"><Pencil size={11} /></button>
           </div>
           <div className="flex h-18 min-w-0 flex-1 items-center justify-between gap-3">
             <p className="truncate text-base font-extrabold">{nickname}</p>
-            <button type="button" onClick={() => setIsNicknameOpen(true)} className="flex shrink-0 items-center gap-1 rounded-lg border-2 border-[#b9dceb] bg-[#e5f5fe] px-2.5 py-1 text-[10px] font-extrabold text-[#238fc9] shadow-sm shadow-[#9bcce5]/10 transition hover:border-[#8bcdf0] hover:bg-[#d8f0fd] active:scale-[.98]"><Pencil size={11} /> 닉네임 수정</button>
+            <button type="button" onClick={() => setIsNicknameOpen(true)} className="flex w-fit shrink-0 items-center gap-1 text-[10px] font-extrabold text-[#238fc9] transition-colors hover:text-[#167eb6] active:scale-[.98]"><Pencil size={11} /> 닉네임 수정</button>
           </div>
         </div>
       </section>
 
       <section className="px-5 pt-0">
-        <div className="mb-3 grid h-11 grid-cols-3 gap-1.5 border-b-2 border-[#45ace4] text-[#268fc7]" aria-label="작성한 제보"><span className="flex items-center justify-center"><Grid3X3 size={19} strokeWidth={2.2} /></span><span /><span /></div>
+        <div className="mb-3 grid h-11 grid-cols-3 gap-1.5 text-[#268fc7]" aria-label="작성한 제보"><span className="flex items-center justify-center border-b-2 border-[#45ace4]"><Grid3X3 size={19} strokeWidth={2.2} /></span><span /><span /></div>
         <MyReportList memberId={user.id} columns={3} />
       </section>
 

@@ -34,8 +34,8 @@ export const metadata: Metadata = {
     images: ["/opengraph-image"],
   },
   icons: {
-    icon: [{ url: "/icon.png", type: "image/png", sizes: "3000x3000" }],
-    apple: [{ url: "/apple-icon.png", sizes: "3000x3000", type: "image/png" }],
+    icon: [{ url: "/brand/날씨로그_아이콘.png", type: "image/png", sizes: "531x531" }],
+    apple: [{ url: "/brand/날씨로그_아이콘.png", sizes: "531x531", type: "image/png" }],
   },
   manifest: "/manifest.webmanifest",
   category: "weather",

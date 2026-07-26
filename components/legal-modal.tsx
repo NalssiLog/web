@@ -32,7 +32,7 @@ export function LegalModal() {
     <div className="fixed inset-0 z-[90] flex items-end justify-center bg-[#173144]/35 p-4 backdrop-blur-[2px] sm:items-center" role="presentation" onMouseDown={(event) => { if (event.target === event.currentTarget) close(); }}>
       <section className="flex max-h-[90dvh] w-full max-w-[440px] flex-col overflow-hidden rounded-[24px] bg-[#eef9ff] shadow-2xl" role="dialog" aria-modal="true" aria-labelledby="legal-modal-title">
         <header className="grid shrink-0 grid-cols-[42px_1fr_42px] items-center border-b-2 border-[#dcecf4] px-5 py-4">
-          {origin === "SETTINGS" ? <button type="button" autoFocus onClick={close} className="icon-button" aria-label="설정으로 돌아가기"><ArrowLeft size={20} /></button> : <span />}
+          {origin === "SETTINGS" ? <button type="button" autoFocus onClick={close} className="header-back-button" aria-label="설정으로 돌아가기"><ArrowLeft size={18} /></button> : <span />}
           <h2 id="legal-modal-title" className="text-center text-lg font-extrabold">{title}</h2>
           <button type="button" autoFocus={origin !== "SETTINGS"} onClick={close} className="icon-button" aria-label={`${title} 닫기`}><X size={20} /></button>
         </header>

@@ -47,7 +47,7 @@ export function HomeWeatherControls({
         <MapPin size={18} className="shrink-0 text-[#45ace4]" />
         {isDetecting
           ? <span className="skeleton h-4 w-28 max-w-full rounded" aria-label="현재 위치 불러오는 중" />
-          : <span className="min-w-0 truncate text-sm font-extrabold">{location || "동네를 선택해 주세요"}</span>}
+          : <span className="min-w-0 truncate text-base font-extrabold">{location || "동네를 선택해 주세요"}</span>}
         <ChevronDown size={16} className="shrink-0 text-[#8ba0ae] transition-transform group-hover:translate-y-0.5" />
       </button>
       <button

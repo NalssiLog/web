@@ -46,6 +46,7 @@ export function HomeScreen() {
 
   const items = reports.data?.pages.flatMap((page) => page.reports) ?? [];
   const isEmptyFeed = Boolean(reports.data && items.length === 0);
+  const showFeedEndMessage = Boolean(reports.data && !reports.hasNextPage && items.length > 0);
   const refreshWeather = async () => {
     await Promise.all([summary.refetch(), reports.refetch()]);
   };
@@ -57,7 +58,7 @@ export function HomeScreen() {
   const isInitialWeatherLoading = !locationLabel || (!hasWeatherData && (summary.isPending || reports.isPending));
   const showFullWeatherError = Boolean(locationLabel) && !hasWeatherData && hasWeatherError && !summary.isPending && !reports.isPending;
   return (
-    <div className="page">
+    <div className="page main-tab-page">
       <AppHeader />
       <HomeWeatherControls
         location={locationLabel}
@@ -83,8 +84,8 @@ export function HomeScreen() {
             ? <ReportGridSkeleton columns={2} />
             : null}
       </>}
-      <div ref={loadMoreRef} className={`flex items-center justify-center text-sm text-[#8ba0ae] ${isEmptyFeed ? "h-4" : "h-20"}`}>
-        {reports.isFetchingNextPage ? "다음 날씨를 불러오는 중…" : !reports.hasNextPage && items.length > 0 ? "모든 날씨를 확인했어요" : null}
+      <div ref={loadMoreRef} className={`flex items-center justify-center text-sm text-[#8ba0ae] ${isEmptyFeed ? "h-2" : showFeedEndMessage ? "mb-1 mt-4 min-h-5" : "h-8"}`}>
+        {reports.isFetchingNextPage ? "다음 날씨를 불러오는 중…" : showFeedEndMessage ? "모든 날씨를 확인했어요" : null}
       </div>
       <LocationPicker open={needsManualInput} current={location} isDetecting={isDetecting} detectionError={detectionError} required={false} onClose={() => setNeedsManualInput(false)} onDetect={detectLocation} onSelect={(next) => { setLocation(next); setNeedsManualInput(false); showToast(`${getLocationName(next, "short")} 날씨로 이동했어요.`, "INFO"); }} />
     </div>

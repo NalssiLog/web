@@ -5,7 +5,7 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { ArrowLeft, ChevronRight, ImagePlus, LoaderCircle, MapPin, X } from "lucide-react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
-import { ChangeEvent, useEffect, useMemo, useRef, useState } from "react";
+import { ChangeEvent, FormEvent, useEffect, useMemo, useRef, useState } from "react";
 import { useForm, useWatch } from "react-hook-form";
 import { z } from "zod";
 import { LocationPicker } from "@/components/location-picker";
@@ -104,6 +104,7 @@ export function ReportForm() {
   const galleryInputRef = useRef<HTMLInputElement>(null);
   const cameraInputRef = useRef<HTMLInputElement>(null);
   const uploadControllerRef = useRef<AbortController | null>(null);
+  const submitLockRef = useRef(false);
   const [step, setStep] = useState<1 | 2>(1);
   const [selectedReportLocation, setSelectedReportLocation] = useState<Location | null>(null);
   const [fileError, setFileError] = useState("");
@@ -203,10 +204,32 @@ export function ReportForm() {
       showToast(error instanceof Error ? error.message : "제보를 올리지 못했어요.", "ERROR");
     },
     onSettled: () => {
+      submitLockRef.current = false;
       uploadControllerRef.current = null;
       setUploadProgress(null);
     },
   });
+
+  useEffect(() => {
+    if (!mutation.isPending) return;
+
+    const preventPageExit = (event: BeforeUnloadEvent) => {
+      event.preventDefault();
+      event.returnValue = "";
+    };
+    const preventHistoryBack = (event: PopStateEvent) => {
+      event.stopImmediatePropagation();
+      window.history.forward();
+      showToast("제보를 등록하는 동안에는 화면을 이동할 수 없어요.", "INFO");
+    };
+
+    window.addEventListener("beforeunload", preventPageExit);
+    window.addEventListener("popstate", preventHistoryBack, true);
+    return () => {
+      window.removeEventListener("beforeunload", preventPageExit);
+      window.removeEventListener("popstate", preventHistoryBack, true);
+    };
+  }, [mutation.isPending, showToast]);
 
   const addImages = async (event: ChangeEvent<HTMLInputElement>) => {
     const requested = Array.from(event.target.files ?? []).map(normalizeSelectedImage);
@@ -241,10 +264,19 @@ export function ReportForm() {
     }
   };
 
-  const submit = handleSubmit((values) => {
+  const submit = (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
     if (!reportLocation) { setNeedsManualInput(true); return; }
-    mutation.mutate(values);
-  });
+    if (submitLockRef.current || mutation.isPending) return;
+    submitLockRef.current = true;
+    let mutationStarted = false;
+    void handleSubmit((values) => {
+      mutationStarted = true;
+      mutation.mutate(values);
+    })(event).finally(() => {
+      if (!mutationStarted) submitLockRef.current = false;
+    });
+  };
 
   const goToStoryStep = () => {
     if (canGoToStory) setStep(2);
@@ -257,12 +289,12 @@ export function ReportForm() {
       : "사진을 준비하는 중…";
 
   return (
-    <form onSubmit={submit} className="page">
-      <header className="safe-top pb-6">
-        <div className="flex items-center justify-between">
-          <button type="button" onClick={() => step === 2 ? setStep(1) : router.back()} className="icon-button" aria-label={step === 2 ? "이전 단계" : "뒤로 가기"}><ArrowLeft size={21} /></button>
+    <form onSubmit={submit} className="page" aria-busy={mutation.isPending}>
+      <header className="safe-top pb-2">
+        <div className="flex min-h-9 items-center justify-between">
+          <button type="button" disabled={mutation.isPending} onClick={() => step === 2 ? setStep(1) : router.back()} className="header-back-button disabled:cursor-not-allowed disabled:opacity-50" aria-label={step === 2 ? "이전 단계" : "뒤로 가기"}><ArrowLeft size={18} /></button>
           <h1 className="text-lg font-extrabold">지금 날씨 제보하기</h1>
-          <span className="w-[42px]" />
+          <span className="w-9" />
         </div>
         <div className="mt-3 flex items-center justify-center" aria-label={`2페이지 중 ${step}페이지`}>
           <span className="flex size-7 items-center justify-center rounded-full border-2 border-[#45ace4] bg-[#45ace4] text-xs font-extrabold text-white">1</span>
@@ -285,7 +317,7 @@ export function ReportForm() {
           <div className="mt-3 grid grid-cols-3 gap-2.5">
             {Array.from({ length: 3 }).map((_, index) => {
               const preview = previews[index];
-              if (preview) return <div key={`${preview.file.name}-${preview.file.lastModified}`} className="relative aspect-square overflow-hidden rounded-[18px] bg-[#edf4f7]"><Image src={preview.url} alt={`선택한 사진 ${index + 1}`} fill unoptimized className="object-cover" /><button type="button" onClick={() => setValue("images", files.filter((_, fileIndex) => fileIndex !== index), { shouldValidate: true })} className="absolute right-1.5 top-1.5 flex size-7 items-center justify-center rounded-full bg-[#173144]/75 text-white" aria-label={`사진 ${index + 1} 삭제`}><X size={15} /></button></div>;
+              if (preview) return <div key={`${preview.file.name}-${preview.file.lastModified}`} className="relative aspect-square overflow-hidden rounded-[18px] border border-[#d2e3ec]"><Image src={preview.url} alt={`선택한 사진 ${index + 1}`} fill unoptimized className="object-cover" /><button type="button" onClick={() => setValue("images", files.filter((_, fileIndex) => fileIndex !== index), { shouldValidate: true })} className="absolute right-1.5 top-1.5 flex size-7 items-center justify-center rounded-full bg-[#173144]/75 text-white" aria-label={`사진 ${index + 1} 삭제`}><X size={15} /></button></div>;
               if (index === files.length) return <button key="add-image" type="button" disabled={isOptimizingImages} onClick={() => setIsPhotoSourceOpen(true)} className="flex aspect-square flex-col items-center justify-center rounded-[18px] border-2 border-dashed border-[#bcd3df] text-[#718594] disabled:cursor-wait disabled:opacity-60">{isOptimizingImages ? <LoaderCircle size={23} className="animate-spin" /> : <ImagePlus size={23} />}<span className="mt-1 text-xs font-bold">{isOptimizingImages ? "최적화 중" : "사진 추가"}</span></button>;
               return <div key={`empty-${index}`} className="aspect-square rounded-[18px] border-2 border-dashed border-[#d9e6ec]" aria-hidden="true" />;
             })}

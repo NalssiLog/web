@@ -8,7 +8,7 @@ export const contentType = "image/png";
 export const runtime = "nodejs";
 
 export default async function OpenGraphImage() {
-  const icon = await readFile(join(process.cwd(), "app", "icon.png"));
+  const icon = await readFile(join(process.cwd(), "public", "brand", "날씨로그_아이콘.png"));
   const iconDataUrl = `data:image/png;base64,${icon.toString("base64")}`;
   return new ImageResponse(
     (
