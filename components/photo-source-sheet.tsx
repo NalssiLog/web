@@ -26,16 +26,16 @@ export function PhotoSourceSheet({
           <button type="button" onClick={onClose} className="icon-button" aria-label="닫기"><X size={19} /></button>
         </div>
         <div className="mt-4 grid grid-cols-2 gap-3">
-          <button type="button" onClick={onSelectGallery} className="flex min-h-28 flex-col items-center justify-center rounded-[20px] bg-white text-[#386177] shadow-sm shadow-[#b8d6e6]/20 transition hover:bg-[#f9fdff]">
+          <button type="button" onClick={onSelectGallery} className="flex min-h-28 flex-col items-center justify-center rounded-[20px] border-2 border-[#d2e3ec] text-[#386177] transition hover:border-[#9fd4ee]">
             <span className="flex size-11 items-center justify-center rounded-2xl bg-[#eef9ff] text-[#45ace4]"><Images size={23} /></span>
             <span className="mt-2.5 text-sm font-extrabold">앨범에서 선택</span>
           </button>
-          <button type="button" onClick={onTakePhoto} className="flex min-h-28 flex-col items-center justify-center rounded-[20px] bg-white text-[#386177] shadow-sm shadow-[#b8d6e6]/20 transition hover:bg-[#f9fdff]">
+          <button type="button" onClick={onTakePhoto} className="flex min-h-28 flex-col items-center justify-center rounded-[20px] border-2 border-[#d2e3ec] text-[#386177] transition hover:border-[#9fd4ee]">
             <span className="flex size-11 items-center justify-center rounded-2xl bg-[#eef9ff] text-[#45ace4]"><Camera size={23} /></span>
             <span className="mt-2.5 text-sm font-extrabold">사진 촬영</span>
           </button>
         </div>
-        <button type="button" onClick={onClose} className="mt-3 w-full rounded-2xl bg-white py-3.5 text-sm font-extrabold text-[#718594]">취소</button>
+        <button type="button" onClick={onClose} className="mt-3 w-full rounded-2xl border-2 border-[#d2e3ec] py-3.5 text-sm font-extrabold text-[#718594]">취소</button>
       </div>
     </div>,
     document.body,

@@ -93,10 +93,10 @@ export function HomeScreen() {
 
 function ConnectionNotice({ onRetry, isRetrying }: { onRetry: () => void; isRetrying: boolean }) {
   return (
-    <div className="mb-4 flex items-center gap-3 rounded-[18px] border border-[#f0dfc8] bg-[#fff9ef] px-4 py-3 text-[#806846]" role="status">
+    <div className="mb-4 flex items-center gap-3 rounded-[18px] border-2 border-[#f0dfc8] bg-[#fff9ef] px-4 py-3 text-[#806846]" role="status">
       <CloudOff size={18} className="shrink-0" />
       <p className="min-w-0 flex-1 text-xs font-bold leading-5">서버 연결이 원활하지 않아 최근 데이터를 표시하고 있어요.</p>
-      <button type="button" onClick={onRetry} disabled={isRetrying} className="flex size-8 shrink-0 items-center justify-center rounded-xl bg-white transition-colors hover:text-[#268fc7] disabled:cursor-wait disabled:opacity-50" aria-label="날씨 다시 불러오기">
+      <button type="button" onClick={onRetry} disabled={isRetrying} className="flex size-8 shrink-0 items-center justify-center rounded-xl border-2 border-[#d2e3ec] transition-colors hover:text-[#268fc7] disabled:cursor-wait disabled:opacity-50" aria-label="날씨 다시 불러오기">
         <RefreshCw size={15} className={isRetrying ? "animate-spin" : ""} />
       </button>
     </div>

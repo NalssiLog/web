@@ -19,13 +19,13 @@ export function ReportDeleteConfirmModal({
           <h3 id="report-delete-modal-title" className="text-center text-lg font-extrabold">제보 삭제</h3>
           <button type="button" disabled={isSubmitting} onClick={onClose} className="icon-button disabled:opacity-50" aria-label="닫기"><X size={19} /></button>
         </div>
-        <div className="mt-5 rounded-[20px] bg-white px-5 py-6 text-center">
+        <div className="mt-5 rounded-[20px] border-2 border-[#d2e3ec] px-5 py-6 text-center">
           <span className="mx-auto flex size-12 items-center justify-center rounded-full bg-[#fff0ed] text-[#c95e5e]"><Trash2 size={22} /></span>
           <p className="mt-3 text-sm font-extrabold">이 제보를 삭제하시겠어요?</p>
           <p className="mt-2 text-xs font-semibold leading-5 text-[#718594]">삭제한 제보와 사진은 다시 복구할 수 없어요.</p>
         </div>
         <div className="mt-4 grid grid-cols-2 gap-2.5">
-          <button type="button" disabled={isSubmitting} onClick={onClose} className="rounded-2xl bg-white py-3.5 text-sm font-extrabold text-[#526b7a] disabled:opacity-50">취소</button>
+          <button type="button" disabled={isSubmitting} onClick={onClose} className="rounded-2xl border-2 border-[#d2e3ec] py-3.5 text-sm font-extrabold text-[#526b7a] disabled:opacity-50">취소</button>
           <button type="button" disabled={isSubmitting} onClick={onConfirm} className="rounded-2xl bg-[#c95e5e] py-3.5 text-sm font-extrabold text-white disabled:opacity-60">{isSubmitting ? "삭제하는 중…" : "삭제하기"}</button>
         </div>
       </div>

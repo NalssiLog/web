@@ -130,14 +130,14 @@ export function AuthCallbackScreen() {
     <main className="flex min-h-[75dvh] items-center justify-center px-5">
       <section className="w-full max-w-[340px] rounded-[24px] bg-[#eef9ff] p-5 shadow-xl">
         <h1 className="text-center text-xl font-extrabold">계정 연동</h1>
-        <div className="mt-4 rounded-[20px] bg-white px-4 py-5 text-center">
+        <div className="mt-4 rounded-[20px] border-2 border-[#d2e3ec] px-4 py-5 text-center">
           <div className="mx-auto w-fit"><SocialIcon provider={pendingLink.provider} /></div>
           <p className="mt-4 text-xs font-extrabold text-[#238fc9]">{pendingLink.email}</p>
           <p className="mt-3 text-sm font-extrabold">{existingProvider ? `이미 ${providerLabel[existingProvider]} 계정이 있어요.` : "이미 가입된 회원 정보가 있어요."}</p>
           <p className="mt-2 text-sm font-semibold text-[#526a7a]">{providerLabel[pendingLink.provider]} 계정을 연동할까요?</p>
         </div>
         <div className="mt-4 grid grid-cols-2 gap-2.5">
-          <button type="button" disabled={isSubmitting} onClick={() => void cancel()} className="rounded-2xl border border-[#dce8ef] bg-white py-3.5 text-sm font-extrabold text-[#526a7a] disabled:opacity-50">취소</button>
+          <button type="button" disabled={isSubmitting} onClick={() => void cancel()} className="rounded-2xl border-2 border-[#d2e3ec] py-3.5 text-sm font-extrabold text-[#526a7a] disabled:opacity-50">취소</button>
           <button type="button" disabled={isSubmitting} onClick={() => void consent()} className="rounded-2xl bg-[#45ace4] py-3.5 text-sm font-extrabold text-white disabled:opacity-50">{isSubmitting ? "처리 중…" : "연동하기"}</button>
         </div>
       </section>

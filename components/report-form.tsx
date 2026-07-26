@@ -89,7 +89,7 @@ function StatusField<T extends string>({ title, options, value, onChange }: { ti
       <div className="mt-3 grid grid-cols-3 gap-2">
         {options.map((option) => {
           const selected = value === option.value;
-          return <button key={option.value} type="button" onClick={() => onChange(selected ? undefined : option.value)} className={`flex min-h-16 items-center justify-center rounded-[18px] border p-2 transition ${selected ? "border-[#45ace4] bg-[#eaf7ff] text-[#268fc7] ring-2 ring-[#45ace4]/10" : "border-[#e2ecf2] bg-white text-[#526a7a]"}`} aria-pressed={selected}>
+          return <button key={option.value} type="button" onClick={() => onChange(selected ? undefined : option.value)} className={`flex min-h-16 items-center justify-center rounded-[18px] border-2 p-2 transition ${selected ? "border-[#45ace4] bg-[#eaf7ff] text-[#268fc7] ring-2 ring-[#45ace4]/10" : "border-[#d2e3ec] text-[#526a7a]"}`} aria-pressed={selected}>
             <span className="text-[13px] font-bold">{option.label}</span>
           </button>;
         })}
@@ -267,7 +267,7 @@ export function ReportForm() {
         <div className="mt-3 flex items-center justify-center" aria-label={`2페이지 중 ${step}페이지`}>
           <span className="flex size-7 items-center justify-center rounded-full border-2 border-[#45ace4] bg-[#45ace4] text-xs font-extrabold text-white">1</span>
           <span className={`h-0.5 w-9 ${step === 2 ? "bg-[#45ace4]" : "bg-[#cbdce5]"}`} />
-          <span className={`flex size-7 items-center justify-center rounded-full border-2 text-xs font-extrabold ${step === 2 ? "border-[#45ace4] bg-[#45ace4] text-white" : "border-[#cbdce5] bg-white text-[#8ba0ae]"}`}>2</span>
+          <span className={`flex size-7 items-center justify-center rounded-full border-2 text-xs font-extrabold ${step === 2 ? "border-[#45ace4] bg-[#45ace4] text-white" : "border-[#cbdce5] text-[#8ba0ae]"}`}>2</span>
         </div>
       </header>
 
@@ -275,7 +275,7 @@ export function ReportForm() {
         <input type="hidden" {...register("temperature")} />
         <input type="hidden" {...register("precipitation")} />
         <input type="hidden" {...register("sunlight")} />
-        <button type="button" onClick={() => setNeedsManualInput(true)} className="flex w-full items-center gap-3 rounded-[20px] bg-white p-4 text-left shadow-sm shadow-[#b8d6e6]/20">
+        <button type="button" onClick={() => setNeedsManualInput(true)} className="flex w-full items-center gap-3 rounded-[20px] border-2 border-[#d2e3ec] p-4 text-left">
           <span className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-[#eef9ff] text-[#45ace4]"><MapPin size={20} /></span>
           <span className="min-w-0 flex-1"><span className="block text-xs font-semibold text-[#718594]">현재 위치</span>{isDetecting && !needsManualInput ? <span className="skeleton mt-1 block h-4 w-40 max-w-full rounded" aria-label="현재 위치 불러오는 중" /> : <span className="block truncate font-extrabold">{reportLocation?.label ?? "위치를 설정해 주세요"}</span>}</span>
         </button>
@@ -286,8 +286,8 @@ export function ReportForm() {
             {Array.from({ length: 3 }).map((_, index) => {
               const preview = previews[index];
               if (preview) return <div key={`${preview.file.name}-${preview.file.lastModified}`} className="relative aspect-square overflow-hidden rounded-[18px] bg-[#edf4f7]"><Image src={preview.url} alt={`선택한 사진 ${index + 1}`} fill unoptimized className="object-cover" /><button type="button" onClick={() => setValue("images", files.filter((_, fileIndex) => fileIndex !== index), { shouldValidate: true })} className="absolute right-1.5 top-1.5 flex size-7 items-center justify-center rounded-full bg-[#173144]/75 text-white" aria-label={`사진 ${index + 1} 삭제`}><X size={15} /></button></div>;
-              if (index === files.length) return <button key="add-image" type="button" disabled={isOptimizingImages} onClick={() => setIsPhotoSourceOpen(true)} className="flex aspect-square flex-col items-center justify-center rounded-[18px] border border-dashed border-[#bcd3df] bg-white text-[#718594] disabled:cursor-wait disabled:opacity-60">{isOptimizingImages ? <LoaderCircle size={23} className="animate-spin" /> : <ImagePlus size={23} />}<span className="mt-1 text-xs font-bold">{isOptimizingImages ? "최적화 중" : "사진 추가"}</span></button>;
-              return <div key={`empty-${index}`} className="aspect-square rounded-[18px] border border-dashed border-[#d9e6ec] bg-white/45" aria-hidden="true" />;
+              if (index === files.length) return <button key="add-image" type="button" disabled={isOptimizingImages} onClick={() => setIsPhotoSourceOpen(true)} className="flex aspect-square flex-col items-center justify-center rounded-[18px] border-2 border-dashed border-[#bcd3df] text-[#718594] disabled:cursor-wait disabled:opacity-60">{isOptimizingImages ? <LoaderCircle size={23} className="animate-spin" /> : <ImagePlus size={23} />}<span className="mt-1 text-xs font-bold">{isOptimizingImages ? "최적화 중" : "사진 추가"}</span></button>;
+              return <div key={`empty-${index}`} className="aspect-square rounded-[18px] border-2 border-dashed border-[#d9e6ec]" aria-hidden="true" />;
             })}
           </div>
           <input ref={galleryInputRef} type="file" multiple disabled={isOptimizingImages} accept="image/jpeg,image/png,image/webp" onChange={(event) => void addImages(event)} className="hidden" />
@@ -300,12 +300,12 @@ export function ReportForm() {
         <StatusField title="햇빛의 밝기는 어떤가요?" options={SUNLIGHT_OPTIONS} value={sunlight} onChange={(value?: SunlightStatus) => value ? setValue("sunlight", value) : resetField("sunlight")} />
       </> : <section>
         <div className="flex items-end justify-between"><label htmlFor="content" className="text-[17px] font-extrabold">날씨 이야기 <span className="text-[#45ace4]">*</span></label><span className="text-xs font-bold text-[#8ba0ae]">{contentLength}/100</span></div>
-        <textarea id="content" {...contentField} onChange={(event) => { event.target.value = truncateText(event.target.value, 100); contentField.onChange(event); }} maxLength={100} rows={5} placeholder="밖에 나갈 이웃에게 지금 날씨를 알려주세요." className="mt-3 w-full resize-none rounded-[20px] border border-[#dce8ef] bg-white p-4 leading-6 outline-none transition placeholder:text-[#a4b3bd] focus:border-[#45ace4] focus:ring-3 focus:ring-[#45ace4]/10" />
-        <div className="mt-3 flex flex-wrap gap-2">{SUGGESTED_MESSAGES.map((message) => <button key={message} type="button" onClick={() => setValue("content", message, { shouldValidate: true })} className="rounded-full border border-[#d9eaf3] bg-white px-3.5 py-2 text-xs font-bold text-[#52768a]">{message}</button>)}</div>
+        <textarea id="content" {...contentField} onChange={(event) => { event.target.value = truncateText(event.target.value, 100); contentField.onChange(event); }} maxLength={100} rows={5} placeholder="밖에 나갈 이웃에게 지금 날씨를 알려주세요." className="mt-3 w-full resize-none rounded-[20px] border-2 border-[#d2e3ec] bg-transparent p-4 leading-6 outline-none transition placeholder:text-[#a4b3bd] focus:border-[#45ace4] focus:ring-3 focus:ring-[#45ace4]/10" />
+        <div className="mt-3 flex flex-wrap gap-2">{SUGGESTED_MESSAGES.map((message) => <button key={message} type="button" onClick={() => setValue("content", message, { shouldValidate: true })} className="rounded-full border-2 border-[#d2e3ec] px-3.5 py-2 text-xs font-bold text-[#52768a]">{message}</button>)}</div>
         {mutation.isError && <p className="mt-6 rounded-2xl bg-[#fff3f0] p-4 text-center text-sm font-semibold text-[#b4534a]">{mutation.error instanceof Error ? mutation.error.message : "제보를 올리지 못했어요. 잠시 후 다시 시도해 주세요."}</p>}
       </section>}
 
-      <div className="mobile-fixed">{step === 1 ? <button type="button" disabled={!canGoToStory || isOptimizingImages} onClick={goToStoryStep} className="primary-button">다음 <ChevronRight size={19} /></button> : mutation.isPending ? <div className="w-full rounded-[18px] bg-white p-3 shadow-sm"><div className="flex items-center justify-between gap-3"><span className="flex items-center gap-2 text-xs font-extrabold text-[#386177]"><LoaderCircle size={16} className="animate-spin text-[#45ace4]" />{uploadLabel}</span><span className="text-xs font-extrabold text-[#268fc7]">{uploadProgress?.percent ?? 0}%</span></div><div className="mt-2 h-2 overflow-hidden rounded-full bg-[#e4eff5]"><span className="block h-full rounded-full bg-[#45ace4] transition-[width] duration-200" style={{ width: `${uploadProgress?.percent ?? 0}%` }} /></div></div> : <button type="submit" disabled={!canSubmitReport} className="primary-button">{mutation.isError ? "다시 시도" : "제보 올리기"}</button>}</div>
+      <div className="mobile-fixed">{step === 1 ? <button type="button" disabled={!canGoToStory || isOptimizingImages} onClick={goToStoryStep} className="primary-button">다음 <ChevronRight size={19} /></button> : mutation.isPending ? <div className="w-full rounded-[18px] border-2 border-[#d2e3ec] p-3"><div className="flex items-center justify-between gap-3"><span className="flex items-center gap-2 text-xs font-extrabold text-[#386177]"><LoaderCircle size={16} className="animate-spin text-[#45ace4]" />{uploadLabel}</span><span className="text-xs font-extrabold text-[#268fc7]">{uploadProgress?.percent ?? 0}%</span></div><div className="mt-2 h-2 overflow-hidden rounded-full bg-[#e4eff5]"><span className="block h-full rounded-full bg-[#45ace4] transition-[width] duration-200" style={{ width: `${uploadProgress?.percent ?? 0}%` }} /></div></div> : <button type="submit" disabled={!canSubmitReport} className="primary-button">{mutation.isError ? "다시 시도" : "제보 올리기"}</button>}</div>
       <PhotoSourceSheet
         open={isPhotoSourceOpen}
         onClose={() => setIsPhotoSourceOpen(false)}

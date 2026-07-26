@@ -8,7 +8,7 @@ import { useToastStore } from "@/store/toast-store";
 export function AppHeader() {
   const showToast = useToastStore((state) => state.showToast);
   return (
-    <header className="safe-top sticky top-0 z-30 -mx-5 mb-1 flex items-center justify-between border-b border-[#dcecf4] bg-[#eef9ff]/95 px-5 pb-3 backdrop-blur">
+    <header className="safe-top sticky top-0 z-30 -mx-5 mb-1 flex items-center justify-between border-b-2 border-[#dcecf4] bg-[#eef9ff]/95 px-5 pb-3 backdrop-blur">
       <div className="flex min-w-0 items-center gap-2">
         <Link href="/" className="flex size-10 shrink-0" aria-label="날씨로그 홈으로 이동">
           <Image src="/brand/날씨로그_아이콘.png" alt="" width={40} height={40} priority className="size-full object-contain" />
@@ -16,7 +16,7 @@ export function AppHeader() {
         <button
           type="button"
           onClick={() => showToast("전국 LIVE를 준비하고 있어요.", "INFO")}
-          className="flex h-9 min-w-0 items-center gap-2 rounded-xl border border-[#d9eaf3] px-3 text-xs font-extrabold text-[#386177] transition-colors hover:border-[#b9ddea] hover:text-[#238fc9]"
+          className="flex h-9 min-w-0 items-center gap-2 rounded-xl border-2 border-[#d9eaf3] px-3 text-xs font-extrabold text-[#386177] transition-colors hover:border-[#b9ddea] hover:text-[#238fc9]"
           aria-label="전국 라이브 안내"
         >
           <span className="relative flex size-2" aria-hidden="true">

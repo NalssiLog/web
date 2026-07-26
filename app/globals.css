@@ -42,9 +42,8 @@ button { cursor: pointer; }
   width: min(100%, 480px);
   transform: translateX(-50%);
   padding: 5px 16px max(7px, env(safe-area-inset-bottom));
-  border-top: 1px solid #dcecf4;
-  background: rgba(250, 253, 255, .96);
-  box-shadow: 0 -8px 24px rgba(57, 105, 132, .08);
+  border-top: 2px solid #dcecf4;
+  background: rgba(238, 249, 255, .96);
   backdrop-filter: blur(14px);
 }
 .mobile-fixed {
@@ -55,7 +54,7 @@ button { cursor: pointer; }
   width: min(100%, 480px);
   transform: translateX(-50%);
   padding: 14px 20px max(18px, env(safe-area-inset-bottom));
-  border-top: 1px solid #dcecf4;
+  border-top: 2px solid #dcecf4;
   background: #eef9ff;
 }
 .primary-button {
@@ -81,10 +80,10 @@ button { cursor: pointer; }
   height: 42px;
   align-items: center;
   justify-content: center;
-  border: 1px solid #e6eef3;
+  border: 2px solid #d2e3ec;
   border-radius: 14px;
   color: var(--ink);
-  background: white;
+  background: transparent;
 }
 .legal-content { color: #526a7a; font-size: 13px; font-weight: 500; line-height: 1.75; }
 .legal-content section + section { margin-top: 28px; }

@@ -26,6 +26,7 @@ export function NicknameEditModal({
   const checkRequestRef = useRef(0);
   const normalizedNickname = nickname.trim();
   const isValid = isNicknameValid(nickname);
+  const hasFeedback = (!isValid && nickname.length > 0) || checkState === "AVAILABLE" || checkState === "TAKEN";
 
   useEffect(() => () => {
     if (checkTimerRef.current) clearTimeout(checkTimerRef.current);
@@ -78,7 +79,7 @@ export function NicknameEditModal({
           <button type="button" onClick={onClose} className="icon-button" aria-label="닫기"><X size={19} /></button>
         </div>
 
-        <div className="mt-5 rounded-[18px] bg-white p-3.5">
+        <div className="mt-5 rounded-[18px] border-2 border-[#d2e3ec] p-3.5">
           <label htmlFor="nickname" className="sr-only">새 닉네임</label>
           <div className="relative">
             <input
@@ -114,17 +115,17 @@ export function NicknameEditModal({
                 }
                 changeNickname(nextNickname);
               }}
-              className="w-full rounded-xl border border-[#dce8ee] px-3 py-2.5 pr-10 text-sm font-bold outline-none transition focus:border-[#45ace4]"
+              className="w-full rounded-xl border-2 border-[#dce8ee] px-3 py-2.5 pr-10 text-sm font-bold outline-none transition focus:border-[#45ace4]"
               placeholder="닉네임 입력"
             />
             {checkState === "CHECKING" && <LoaderCircle size={16} className="absolute right-3 top-1/2 -translate-y-1/2 animate-spin text-[#45ace4]" aria-label="닉네임 중복 확인 중" />}
           </div>
           <p className="mt-1.5 text-right text-[11px] font-bold text-[#8ba0ae]">{getTextLength(nickname)}/10</p>
-          <div className="mt-2 min-h-5 text-xs font-bold">
+          {hasFeedback && <div className="mt-2 text-xs font-bold">
             {!isValid && nickname.length > 0 && <p className="whitespace-nowrap text-[9px] tracking-[-0.03em] text-[#c95e5e] min-[390px]:text-[10px] sm:text-[11px]">공백과 초성을 제외한 한글, 영문, 숫자 2~10자로 입력해주세요.</p>}
             {checkState === "AVAILABLE" && <p className="flex items-center gap-1 text-[#2d9b67]"><Check size={14} /> 사용할 수 있는 닉네임이에요.</p>}
             {checkState === "TAKEN" && <p className="text-[#c95e5e]">이미 사용 중인 닉네임이에요.</p>}
-          </div>
+          </div>}
         </div>
 
         <button type="button" disabled={checkState !== "AVAILABLE" || isSaving} onClick={() => void save()} className="mt-4 w-full rounded-2xl bg-[#45ace4] py-3.5 text-sm font-extrabold text-white transition hover:bg-[#299bd8] disabled:cursor-not-allowed disabled:bg-[#b9d5e4]">{isSaving ? "변경하는 중…" : "변경하기"}</button>

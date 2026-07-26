@@ -43,9 +43,7 @@ export function MainTabNavigation() {
   const profileActive = pathname === "/mypage";
   const profileContent = (
     <span
-      className={`flex size-8 items-center justify-center rounded-full bg-white bg-cover bg-center ${
-        profileActive ? "ring-2 ring-[#45ace4]" : "ring-1 ring-[#d9e7ee]"
-      }`}
+      className="flex size-8 items-center justify-center rounded-full bg-white bg-cover bg-center"
       style={user.type === "MEMBER" && user.avatarUrl ? { backgroundImage: `url(${user.avatarUrl})` } : undefined}
       aria-hidden="true"
     >
