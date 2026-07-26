@@ -4,6 +4,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { AlertCircle, Check, Flame, LockKeyhole, LocateFixed, MapPin, RefreshCw, Search, Star, X } from "lucide-react";
 import { FormEvent, useEffect, useState, type ReactNode } from "react";
 import { createPortal } from "react-dom";
+import { LocationDetectingIndicator } from "@/components/location-detecting-indicator";
 import { getLocationName } from "@/lib/constants";
 import { locationApi } from "@/lib/api/location-api";
 import { truncateText } from "@/lib/text";
@@ -106,14 +107,14 @@ function LocationPickerDialog({ current, isDetecting, detectionError, required, 
           </div>
           {!required && <button type="button" onClick={onClose} className="flex size-9 items-center justify-center rounded-xl border-2 border-[#d2e3ec]" aria-label="닫기"><X size={18} /></button>}
         </div>
-        <div className="mb-5 flex items-center gap-3 rounded-[18px] border-2 border-[#d2e3ec] p-4">
-          <span className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-[#eef9ff] text-[#45ace4]"><MapPin size={19} /></span>
-          <div className="min-w-0 flex-1"><p className="text-[11px] font-bold text-[#718594]">현재 설정된 위치</p>{isDetecting ? <div className="skeleton mt-1.5 h-4 w-44 max-w-full rounded" aria-label="현재 위치 불러오는 중" /> : <p className="mt-0.5 break-keep text-sm font-extrabold leading-5">{selectedLocation ? getLocationName(selectedLocation, "full") : current ? getLocationName(current, "full") : "아직 설정되지 않았어요"}</p>}</div>
-          <button type="button" onClick={detectCandidateLocation} disabled={isDetecting} className="flex shrink-0 items-center gap-1 rounded-xl bg-[#eef9ff] px-2.5 py-2 text-[11px] font-extrabold text-[#268fc7] disabled:opacity-50" aria-label="GPS로 현재 위치 다시 찾기"><LocateFixed size={14} /> GPS</button>
+        <div className="mb-5 flex items-center gap-3 rounded-[18px] border-2 border-[#d2e3ec] p-3">
+          <span className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-[#eef9ff] text-[#45ace4]"><MapPin size={18} /></span>
+          <div className="min-w-0 flex-1">{isDetecting ? <LocationDetectingIndicator iconPosition="right" /> : <p className="break-keep text-base font-extrabold leading-6">{selectedLocation ? getLocationName(selectedLocation, "full") : current ? getLocationName(current, "full") : "아직 설정되지 않았어요"}</p>}</div>
+          <button type="button" onClick={detectCandidateLocation} disabled={isDetecting} className="flex shrink-0 items-center gap-1 rounded-xl border-2 border-[#d2e3ec] bg-[#eef9ff] px-2.5 py-1.5 text-[11px] font-extrabold text-[#268fc7] disabled:opacity-50" aria-label="GPS로 현재 위치 다시 찾기"><LocateFixed size={14} /> GPS</button>
         </div>
         {detectionError && <p className="-mt-3 mb-5 flex items-start gap-1.5 px-1 text-xs font-bold leading-5 text-[#b36b54]"><AlertCircle size={14} className="mt-0.5 shrink-0" />{detectionError}</p>}
         <form onSubmit={submit}>
-          <div className="mb-4 grid grid-cols-3 rounded-2xl bg-[#f1f6f9] p-1">
+          <div className="mb-4 grid grid-cols-3 rounded-2xl p-1">
             <TabButton active={activeTab === "SEARCH"} onClick={() => setActiveTab("SEARCH")} icon={<Search size={14} />} label="검색" />
             <TabButton active={activeTab === "FAVORITES"} onClick={() => setActiveTab("FAVORITES")} icon={<Star size={14} />} label="즐겨찾기" />
             <TabButton active={activeTab === "POPULAR"} onClick={() => setActiveTab("POPULAR")} icon={<Flame size={14} />} label="인기" />
@@ -130,8 +131,8 @@ function LocationPickerDialog({ current, isDetecting, detectionError, required, 
                 {!serverSearch.isError && searchResults.map((location) => <LocationRow key={location.id} location={location} selected={selectedLocation?.id === location.id} favorite={isMember ? isFavorite(location) : undefined} onSelect={chooseLocation} onToggleFavorite={isMember ? toggleFavorite : undefined} />)}
                 {serverSearch.isFetching && <div className="space-y-2 px-3 py-3">{Array.from({ length: 3 }).map((_, index) => <div key={index} className="skeleton h-10 rounded-xl" />)}</div>}
                 {serverSearch.isError && <LocationLoadError onRetry={() => serverSearch.refetch()} />}
-                {value.trim() && !serverSearch.isFetching && !serverSearch.isError && searchResults.length === 0 && <p className="px-3 py-8 text-center text-sm font-semibold text-[#8ba0ae]">지원하는 지역을 찾지 못했어요.</p>}
-                {!value.trim() && <p className="px-3 py-8 text-center text-sm font-semibold leading-6 text-[#8ba0ae]">찾고 싶은 시·구 또는 동 이름을 입력해 주세요.</p>}
+                {value.trim() && !serverSearch.isFetching && !serverSearch.isError && searchResults.length === 0 && <p className="px-3 py-8 text-center text-sm font-semibold text-[#8ba0ae]">검색 결과가 없습니다.</p>}
+                {!value.trim() && <p className="px-3 py-8 text-center text-sm font-semibold leading-6 text-[#8ba0ae]">검색 결과가 없습니다.</p>}
               </div>
             </>}
             {activeTab === "FAVORITES" && (isMember

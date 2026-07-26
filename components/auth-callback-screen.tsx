@@ -6,6 +6,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { SocialIcon } from "@/components/social-icon";
 import { authApi, type OAuthCallbackResult } from "@/lib/api/auth-api";
+import { markAccountPanelReturn } from "@/lib/account-panel-return";
 import { resolveApiUrl } from "@/lib/api/config";
 import { logger } from "@/lib/logging";
 import type { SocialProvider } from "@/lib/types";
@@ -55,6 +56,7 @@ export function AuthCallbackScreen() {
         const code = searchParams.get("code");
         if (result === "LINK_SUCCESS") {
           authLogger.info("authentication_completed", { result });
+          markAccountPanelReturn();
           showToast("소셜 계정을 연동했어요.", "SUCCESS");
           router.replace("/mypage");
           return;
@@ -128,7 +130,7 @@ export function AuthCallbackScreen() {
 
   return (
     <main className="flex min-h-[75dvh] items-center justify-center px-5">
-      <section className="w-full max-w-[340px] rounded-[24px] bg-[#eef9ff] p-5 shadow-xl">
+      <section className="w-full max-w-[340px] rounded-[24px] border-2 border-[#d2e3ec] bg-[#eef9ff] p-5">
         <h1 className="text-center text-xl font-extrabold">계정 연동</h1>
         <div className="mt-4 rounded-[20px] border-2 border-[#d2e3ec] px-4 py-5 text-center">
           <div className="mx-auto w-fit"><SocialIcon provider={pendingLink.provider} /></div>

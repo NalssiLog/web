@@ -11,7 +11,7 @@ export function WeatherSummary({ summary }: { summary: Summary }) {
     <section className="mb-3">
       <div className="grid grid-cols-3 gap-2">
         <SummaryItem icon={<Thermometer size={17} />} label="체감온도" value={temperature ? statusLabel(TEMPERATURE_OPTIONS, temperature) : "제보 없음"} tone={temperature ? temperatureTone[temperature] : emptyTone} />
-        <SummaryItem icon={<CloudRain size={17} />} label="강수" value={precipitation ? statusLabel(PRECIPITATION_OPTIONS, precipitation) : "제보 없음"} tone={precipitation ? precipitationTone[precipitation] : emptyTone} />
+        <SummaryItem icon={<CloudRain size={17} />} label="비" value={precipitation ? statusLabel(PRECIPITATION_OPTIONS, precipitation) : "제보 없음"} tone={precipitation ? precipitationTone[precipitation] : emptyTone} />
         <SummaryItem icon={<Sun size={17} />} label="햇빛" value={sunlight ? statusLabel(SUNLIGHT_OPTIONS, sunlight) : "제보 없음"} tone={sunlight ? sunlightTone[sunlight] : emptyTone} />
       </div>
     </section>

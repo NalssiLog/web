@@ -17,7 +17,7 @@ import { getLocationName } from "@/lib/constants";
 import { useToastStore } from "@/store/toast-store";
 
 export function HomeScreen() {
-  const { location, setLocation, isDetecting, detectionError, needsManualInput, setNeedsManualInput, detectLocation } = useCurrentLocation({ refreshOnResume: true });
+  const { location, setLocation, isDetecting, detectionError, needsManualInput, setNeedsManualInput, detectLocation } = useCurrentLocation();
   const showToast = useToastStore((state) => state.showToast);
   const loadMoreRef = useRef<HTMLDivElement>(null);
   const locationLabel = location ? getLocationName(location, "short") : "";
@@ -55,7 +55,7 @@ export function HomeScreen() {
   const hasWeatherData = hasSummaryData || hasReportData;
   const hasWeatherError = summary.isError || reports.isError;
   const showLocationError = !location && !isDetecting && Boolean(detectionError);
-  const isInitialWeatherLoading = !locationLabel || (!hasWeatherData && (summary.isPending || reports.isPending));
+  const isInitialWeatherLoading = !isDetecting && Boolean(locationLabel) && !hasWeatherData && (summary.isPending || reports.isPending);
   const showFullWeatherError = Boolean(locationLabel) && !hasWeatherData && hasWeatherError && !summary.isPending && !reports.isPending;
   return (
     <div className="page main-tab-page">

@@ -2,6 +2,7 @@ import { format } from "date-fns";
 import { ko } from "date-fns/locale";
 import { ChevronDown, MapPin, RotateCw } from "lucide-react";
 import { useSyncExternalStore } from "react";
+import { LocationDetectingIndicator } from "@/components/location-detecting-indicator";
 
 let openedAt = 0;
 const openedAtListeners = new Set<() => void>();
@@ -42,11 +43,11 @@ export function HomeWeatherControls({
     : "현재 시각";
 
   return (
-    <section className="mb-2 flex items-center justify-between gap-2">
+    <section className="mb-1 flex items-center justify-between gap-2">
       <button type="button" onClick={onLocationClick} className="group flex w-fit min-w-0 max-w-[60%] items-center gap-2 py-2.5 pr-1 text-left">
         <MapPin size={18} className="shrink-0 text-[#45ace4]" />
         {isDetecting
-          ? <span className="skeleton h-4 w-28 max-w-full rounded" aria-label="현재 위치 불러오는 중" />
+          ? <LocationDetectingIndicator compact />
           : <span className="min-w-0 truncate text-base font-extrabold">{location || "동네를 선택해 주세요"}</span>}
         <ChevronDown size={16} className="shrink-0 text-[#8ba0ae] transition-transform group-hover:translate-y-0.5" />
       </button>

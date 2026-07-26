@@ -40,14 +40,24 @@ const providerLabel: Record<SocialProvider, string> = {
 
 const socialProviders: SocialProvider[] = ["NAVER", "KAKAO"];
 
-export function UserPanel({ open, onClose }: { open: boolean; onClose: () => void }) {
+export type UserPanelView = "MAIN" | "ACCOUNT" | "FEEDBACK";
+
+export function UserPanel({
+  open,
+  onClose,
+  initialView = "MAIN",
+}: {
+  open: boolean;
+  onClose: () => void;
+  initialView?: UserPanelView;
+}) {
   const router = useRouter();
   const queryClient = useQueryClient();
   const user = useAuthStore((state) => state.user);
   const clearUser = useAuthStore((state) => state.logout);
   const showToast = useToastStore((state) => state.showToast);
   const openLegalDocument = useLegalModalStore((state) => state.openLegalDocument);
-  const [view, setView] = useState<"MAIN" | "ACCOUNT" | "FEEDBACK">("MAIN");
+  const [view, setView] = useState<UserPanelView>(initialView);
   const [isWithdrawalOpen, setIsWithdrawalOpen] = useState(false);
   const [isNameEditOpen, setIsNameEditOpen] = useState(false);
   const [isWithdrawing, setIsWithdrawing] = useState(false);
