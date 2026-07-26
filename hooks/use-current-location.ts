@@ -13,10 +13,20 @@ const refreshedLocationIds = new Set<string>();
 export function useCurrentLocation({ refreshOnResume = false }: { refreshOnResume?: boolean } = {}) {
   const { location, setLocation, hasAttemptedDetection, markDetectionAttempted } = useLocationStore();
   const [isDetecting, setIsDetecting] = useState(false);
-  const [needsManualInput, setNeedsManualInput] = useState(false);
+  const [needsManualInput, setNeedsManualInputState] = useState(false);
   const [detectionError, setDetectionError] = useState("");
   const detectionPromiseRef = useRef<Promise<Location | null> | null>(null);
   const lastAutomaticDetectionAtRef = useRef(0);
+  const manualInputDismissedRef = useRef(false);
+
+  const setNeedsManualInput = useCallback((next: boolean) => {
+    manualInputDismissedRef.current = !next;
+    setNeedsManualInputState(next);
+  }, []);
+
+  const requestManualInput = useCallback(() => {
+    if (!location && !manualInputDismissedRef.current) setNeedsManualInputState(true);
+  }, [location]);
 
   const detectLocation = useCallback((applyImmediately = false): Promise<Location | null> => {
     if (detectionPromiseRef.current) return detectionPromiseRef.current;
@@ -25,7 +35,7 @@ export function useCurrentLocation({ refreshOnResume = false }: { refreshOnResum
     if (!navigator.geolocation) {
       locationLogger.warn("geolocation_unavailable", { reason: "unsupported_browser" });
       setDetectionError("이 브라우저에서는 현재 위치를 사용할 수 없어요.");
-      if (!location) setNeedsManualInput(true);
+      requestManualInput();
       return Promise.resolve(null);
     }
     setIsDetecting(true);
@@ -39,7 +49,7 @@ export function useCurrentLocation({ refreshOnResume = false }: { refreshOnResum
             const result = await weatherApi.reverseGeocode(coords.latitude, coords.longitude);
             if (applyImmediately) {
               setLocation(result);
-              setNeedsManualInput(false);
+              setNeedsManualInputState(false);
             }
             resolve(result);
           } catch (error) {
@@ -47,7 +57,7 @@ export function useCurrentLocation({ refreshOnResume = false }: { refreshOnResum
               reason: error instanceof Error ? error.name : "unknown",
             });
             setDetectionError("위치 서버에 연결하지 못했어요. 다시 시도하거나 동네를 검색해 주세요.");
-            if (!location) setNeedsManualInput(true);
+            requestManualInput();
             resolve(null);
           } finally {
             setIsDetecting(false);
@@ -63,7 +73,7 @@ export function useCurrentLocation({ refreshOnResume = false }: { refreshOnResum
           setDetectionError(error.code === error.PERMISSION_DENIED
             ? "위치 권한이 없어 현재 동네를 찾지 못했어요. 동네를 직접 검색해 주세요."
             : "현재 위치를 확인하지 못했어요. 다시 시도하거나 동네를 검색해 주세요.");
-          if (!location) setNeedsManualInput(true);
+          requestManualInput();
           resolve(null);
         },
         { enableHighAccuracy: true, timeout: 12_000, maximumAge: 0 },
@@ -74,7 +84,7 @@ export function useCurrentLocation({ refreshOnResume = false }: { refreshOnResum
     });
     detectionPromiseRef.current = trackedPromise;
     return trackedPromise;
-  }, [location, markDetectionAttempted, setLocation]);
+  }, [markDetectionAttempted, requestManualInput, setLocation]);
 
   useEffect(() => {
     if (hasAttemptedDetection) return;

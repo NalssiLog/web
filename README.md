@@ -16,16 +16,9 @@
 
 ## 서비스 미리보기
 
-<table>
-  <tr>
-    <td><img src="./public/weather/clear-sky.webp" alt="맑은 하늘 제보" /></td>
-    <td><img src="./public/weather/rainy-street.webp" alt="비 오는 거리 제보" /></td>
-  </tr>
-  <tr>
-    <td><img src="./public/weather/park-after-rain.webp" alt="비 온 뒤 공원 제보" /></td>
-    <td><img src="./public/weather/sunset.webp" alt="노을이 보이는 하늘 제보" /></td>
-  </tr>
-</table>
+<p align="center">
+  <img src="./public/weather/clear-sky.webp" alt="맑은 하늘 제보" />
+</p>
 
 ### 동네 날씨 피드
 

@@ -18,7 +18,7 @@ export function LegalDocument({
         <h1 className="text-center text-lg font-extrabold">{title}</h1>
         <span />
       </header>
-      <div className="rounded-[22px] bg-white p-5 shadow-sm shadow-[#b8d6e6]/20">
+      <div className="rounded-[22px] border-2 border-[#d2e3ec] p-5">
         <p className="text-xs font-bold text-[#718594]">시행일 {effectiveDate}</p>
         <div className="legal-content mt-5">{children}</div>
       </div>

@@ -24,7 +24,7 @@ export default function GlobalError({
     <html lang="ko">
       <body>
         <main className="mx-auto flex min-h-screen w-full max-w-[480px] items-center justify-center bg-[#eef9ff] px-5 py-16 text-[#173144]">
-          <section className="w-full rounded-[24px] bg-white px-6 py-10 text-center shadow-sm">
+          <section className="w-full rounded-[24px] border-2 border-[#d2e3ec] px-6 py-10 text-center">
             <span className="mx-auto flex size-14 items-center justify-center rounded-full bg-[#e5f5fe] text-[#45ace4]"><CloudOff size={27} /></span>
             <h1 className="mt-4 text-lg font-extrabold">잠시 구름이 꼈어요</h1>
             <p className="mt-2 text-sm font-semibold leading-6 text-[#718594]">서비스를 불러오지 못했어요.<br />잠시 후 다시 시도해 주세요.</p>

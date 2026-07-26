@@ -21,7 +21,6 @@ const providerLabel: Record<SocialProvider, string> = {
 export function SignupForm() {
   const router = useRouter();
   const queryClient = useQueryClient();
-  const user = useAuthStore((state) => state.user);
   const hasCheckedServerSession = useAuthStore((state) => state.hasCheckedServerSession);
   const provider = useAuthStore((state) => state.pendingSignupProvider);
   const pendingEmail = useAuthStore((state) => state.pendingSignupEmail);
@@ -42,8 +41,8 @@ export function SignupForm() {
   }, [router, setPendingSignupProvider, showToast]);
 
   useEffect(() => {
-    if (hasCheckedServerSession && !provider) router.replace(user.type === "MEMBER" ? "/mypage" : "/");
-  }, [hasCheckedServerSession, provider, router, user.type]);
+    if (hasCheckedServerSession && !provider) router.replace("/");
+  }, [hasCheckedServerSession, provider, router]);
 
   useEffect(() => {
     if (!provider) return;
@@ -119,7 +118,7 @@ export function SignupForm() {
       </header>
 
       <form onSubmit={(event) => { event.preventDefault(); submit(); }} className="px-5 pt-4">
-        <section className="rounded-[22px] bg-white p-5 shadow-sm shadow-[#b8d6e6]/20">
+        <section className="rounded-[22px] border-2 border-[#d2e3ec] p-5">
           <p className="text-xs font-bold text-[#718594]">가입 계정</p>
           <div className="mt-3 flex items-center gap-3">
             <SocialIcon provider={provider} className="size-11" />
@@ -130,11 +129,11 @@ export function SignupForm() {
           </div>
         </section>
 
-        <section className="mt-3 overflow-hidden rounded-[22px] bg-white shadow-sm shadow-[#b8d6e6]/20">
-          <div className="flex items-center gap-3 border-b border-[#edf2f5] px-5 py-4 text-sm font-bold">
+        <section className="mt-3 overflow-hidden rounded-[22px] border-2 border-[#d2e3ec]">
+          <div className="flex items-center gap-3 border-b-2 border-[#edf2f5] px-5 py-4 text-sm font-bold">
             <label className="group flex min-w-0 flex-1 cursor-pointer items-center gap-3">
               <input type="checkbox" checked={privacyAgreed} onChange={(event) => setPrivacyAgreed(event.target.checked)} className="peer sr-only" />
-              <span className={`flex size-5 shrink-0 items-center justify-center rounded-md border-2 transition peer-focus-visible:ring-2 peer-focus-visible:ring-[#8dd3f7] peer-focus-visible:ring-offset-2 ${privacyAgreed ? "border-[#45ace4] bg-[#45ace4] text-white" : "border-[#c8d8e1] bg-[#f9fcfe] text-transparent group-hover:border-[#45ace4] group-hover:bg-[#eef9ff]"}`} aria-hidden="true">{privacyAgreed && <Check size={14} strokeWidth={3} />}</span>
+              <span className={`flex size-5 shrink-0 items-center justify-center rounded-md border-2 transition peer-focus-visible:ring-2 peer-focus-visible:ring-[#8dd3f7] peer-focus-visible:ring-offset-2 ${privacyAgreed ? "border-[#45ace4] bg-[#45ace4] text-white" : "border-[#c8d8e1] text-transparent group-hover:border-[#45ace4] group-hover:bg-[#eef9ff]"}`} aria-hidden="true">{privacyAgreed && <Check size={14} strokeWidth={3} />}</span>
               <span><span className="mr-1 text-[#238fc9]">[필수]</span>개인정보처리방침 동의</span>
             </label>
             <button type="button" onClick={() => openLegalDocument("PRIVACY")} className="shrink-0 cursor-pointer text-xs font-extrabold text-[#718594] underline underline-offset-2 transition-colors hover:text-[#238fc9]">보기</button>
@@ -142,7 +141,7 @@ export function SignupForm() {
           <div className="flex items-center gap-3 px-5 py-4 text-sm font-bold">
             <label className="group flex min-w-0 flex-1 cursor-pointer items-center gap-3">
               <input type="checkbox" checked={termsAgreed} onChange={(event) => setTermsAgreed(event.target.checked)} className="peer sr-only" />
-              <span className={`flex size-5 shrink-0 items-center justify-center rounded-md border-2 transition peer-focus-visible:ring-2 peer-focus-visible:ring-[#8dd3f7] peer-focus-visible:ring-offset-2 ${termsAgreed ? "border-[#45ace4] bg-[#45ace4] text-white" : "border-[#c8d8e1] bg-[#f9fcfe] text-transparent group-hover:border-[#45ace4] group-hover:bg-[#eef9ff]"}`} aria-hidden="true">{termsAgreed && <Check size={14} strokeWidth={3} />}</span>
+              <span className={`flex size-5 shrink-0 items-center justify-center rounded-md border-2 transition peer-focus-visible:ring-2 peer-focus-visible:ring-[#8dd3f7] peer-focus-visible:ring-offset-2 ${termsAgreed ? "border-[#45ace4] bg-[#45ace4] text-white" : "border-[#c8d8e1] text-transparent group-hover:border-[#45ace4] group-hover:bg-[#eef9ff]"}`} aria-hidden="true">{termsAgreed && <Check size={14} strokeWidth={3} />}</span>
               <span><span className="mr-1 text-[#238fc9]">[필수]</span>서비스 이용약관 동의</span>
             </label>
             <button type="button" onClick={() => openLegalDocument("TERMS")} className="shrink-0 cursor-pointer text-xs font-extrabold text-[#718594] underline underline-offset-2 transition-colors hover:text-[#238fc9]">보기</button>

@@ -81,7 +81,7 @@ export function ProfileImageModal({
 
         <div className="mt-5 flex justify-center">
           <span
-            className="flex size-24 items-center justify-center rounded-full bg-white bg-cover bg-center text-[#45ace4] shadow-sm ring-4 ring-white"
+            className="flex size-24 items-center justify-center rounded-full bg-white bg-cover bg-center text-[#45ace4] shadow-sm"
             style={selectedProfile ? { backgroundImage: `url(${selectedProfile})` } : undefined}
             aria-label="선택한 프로필 사진 미리보기"
           >
@@ -89,7 +89,7 @@ export function ProfileImageModal({
           </span>
         </div>
 
-        <div className="mt-5 rounded-[20px] bg-white p-4">
+        <div className="mt-5 rounded-[20px] border-2 border-[#d2e3ec] p-4">
           <p className="text-xs font-extrabold text-[#526b7a]">기본 프로필</p>
           <div className="mt-3 grid grid-cols-4 gap-2">
             {DEFAULT_PROFILE_IMAGES.map((profile) => (
@@ -97,16 +97,17 @@ export function ProfileImageModal({
                 clearObjectUrl();
                 setSelectedProfile(profile.src);
                 setSelection(profile.src === current ? undefined : { type: "PRESET", value: profile.id });
-              }} aria-label={`${profile.label} 프로필 선택`} className={`mx-auto flex size-14 items-center justify-center rounded-full border-2 p-1 transition ${selectedProfile === profile.src ? "border-[#45ace4]" : "border-transparent"}`}>
+              }} aria-label={`${profile.label} 프로필 선택`} className="relative mx-auto flex size-14 items-center justify-center overflow-hidden rounded-full transition">
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img src={profile.src} alt="" className="size-full rounded-full" />
+                {selectedProfile === profile.src && <span className="pointer-events-none absolute inset-0 rounded-full border-[3px] border-[#238fc9]" aria-hidden="true" />}
               </button>
             ))}
           </div>
         </div>
 
         <div className="mt-3">
-          <label className="flex w-full cursor-pointer items-center justify-center gap-2 rounded-2xl bg-white px-4 py-3.5 text-sm font-extrabold transition hover:text-[#238fc9]">
+          <label className="flex w-full cursor-pointer items-center justify-center gap-2 rounded-2xl border-2 border-[#d2e3ec] px-4 py-3.5 text-sm font-extrabold transition hover:border-[#9fd4ee] hover:text-[#238fc9]">
             <ImagePlus size={18} className="text-[#45ace4]" /> 내 사진에서 선택
             <input type="file" disabled={isSaving} accept="image/*" onChange={uploadImage} className="sr-only" />
           </label>

@@ -41,7 +41,7 @@ export function NameEditModal({
           <button type="button" onClick={onClose} className="icon-button" aria-label="닫기"><X size={19} /></button>
         </div>
 
-        <div className="mt-5 rounded-[18px] bg-white p-3.5">
+        <div className="mt-5 rounded-[18px] border-2 border-[#d2e3ec] p-3.5">
           <label htmlFor="member-name" className="sr-only">이름</label>
           <input
             id="member-name"
@@ -59,7 +59,7 @@ export function NameEditModal({
                 void save();
               }
             }}
-            className="w-full rounded-xl border border-[#dce8ee] px-3 py-2.5 text-sm font-bold outline-none transition focus:border-[#45ace4]"
+            className="w-full rounded-xl border-2 border-[#dce8ee] px-3 py-2.5 text-sm font-bold outline-none transition focus:border-[#45ace4]"
             placeholder="이름 입력"
           />
           <p className="mt-1.5 text-right text-[11px] font-bold text-[#8ba0ae]">{nameLength}/30</p>
