@@ -16,16 +16,10 @@ export function useCurrentLocation() {
   const [needsManualInput, setNeedsManualInputState] = useState(false);
   const [detectionError, setDetectionError] = useState("");
   const detectionPromiseRef = useRef<Promise<Location | null> | null>(null);
-  const manualInputDismissedRef = useRef(false);
 
   const setNeedsManualInput = useCallback((next: boolean) => {
-    manualInputDismissedRef.current = !next;
     setNeedsManualInputState(next);
   }, []);
-
-  const requestManualInput = useCallback(() => {
-    if (!location && !manualInputDismissedRef.current) setNeedsManualInputState(true);
-  }, [location]);
 
   const detectLocation = useCallback((applyImmediately = false): Promise<Location | null> => {
     if (detectionPromiseRef.current) return detectionPromiseRef.current;
@@ -34,7 +28,6 @@ export function useCurrentLocation() {
     if (!navigator.geolocation) {
       locationLogger.warn("geolocation_unavailable", { reason: "unsupported_browser" });
       setDetectionError("이 브라우저에서는 현재 위치를 사용할 수 없어요.");
-      requestManualInput();
       return Promise.resolve(null);
     }
     setIsDetecting(true);
@@ -56,7 +49,6 @@ export function useCurrentLocation() {
               reason: error instanceof Error ? error.name : "unknown",
             });
             setDetectionError("위치 서버에 연결하지 못했어요. 다시 시도하거나 동네를 검색해 주세요.");
-            requestManualInput();
             resolve(null);
           } finally {
             setIsDetecting(false);
@@ -72,7 +64,6 @@ export function useCurrentLocation() {
           setDetectionError(error.code === error.PERMISSION_DENIED
             ? "위치 권한이 없어 현재 동네를 찾지 못했어요. 동네를 직접 검색해 주세요."
             : "현재 위치를 확인하지 못했어요. 다시 시도하거나 동네를 검색해 주세요.");
-          requestManualInput();
           resolve(null);
         },
         { enableHighAccuracy: true, timeout: 12_000, maximumAge: 0 },
@@ -83,7 +74,7 @@ export function useCurrentLocation() {
     });
     detectionPromiseRef.current = trackedPromise;
     return trackedPromise;
-  }, [markDetectionAttempted, requestManualInput, setLocation]);
+  }, [markDetectionAttempted, setLocation]);
 
   useEffect(() => {
     if (hasAttemptedDetection || location) return;
@@ -92,11 +83,6 @@ export function useCurrentLocation() {
     }, 0);
     return () => window.clearTimeout(timeout);
   }, [detectLocation, hasAttemptedDetection, location]);
-
-  useEffect(() => {
-    if (location || !hasAttemptedDetection || isDetecting) return;
-    requestManualInput();
-  }, [hasAttemptedDetection, isDetecting, location, requestManualInput]);
 
   useEffect(() => {
     const locationId = location?.id;
