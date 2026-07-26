@@ -44,16 +44,19 @@ function LocationPickerDialog({ current, isDetecting, detectionError, required, 
     queryFn: () => locationApi.search(debouncedValue),
     enabled: Boolean(debouncedValue.trim()),
     staleTime: 60_000,
+    retry: false,
   });
   const serverPopular = useQuery({
     queryKey: ["locations", "popular"],
     queryFn: locationApi.popular,
     staleTime: 60_000,
+    retry: false,
   });
   const serverFavorites = useQuery({
     queryKey: ["locations", "favorites"],
     queryFn: locationApi.favorites,
     enabled: isMember,
+    retry: false,
   });
   const favorites = serverFavorites.data ?? [];
   const popularLocations = serverPopular.data ?? [];

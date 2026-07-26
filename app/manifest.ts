@@ -12,8 +12,8 @@ export default function manifest(): MetadataRoute.Manifest {
     lang: "ko",
     icons: [
       {
-        src: "/brand/nalssilog-icon.png",
-        sizes: "1024x1024",
+        src: "/icon.png",
+        sizes: "3000x3000",
         type: "image/png",
       },
     ],

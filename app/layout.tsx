@@ -1,7 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import "./globals.css";
 import { Providers } from "@/app/providers";
-import { SiteFooter } from "@/components/site-footer";
+import { MainTabNavigation } from "@/components/main-tab-navigation";
 
 const siteUrl = new URL("https://nalssilog.com");
 const siteDescription = "우리 동네 사람들이 직접 전하는 지금 날씨를 사진과 함께 확인하고 제보해 보세요.";
@@ -34,11 +34,8 @@ export const metadata: Metadata = {
     images: ["/opengraph-image"],
   },
   icons: {
-    icon: [
-      { url: "/favicon.ico", sizes: "any" },
-      { url: "/icon.png", type: "image/png", sizes: "512x512" },
-    ],
-    apple: [{ url: "/apple-icon.png", sizes: "180x180", type: "image/png" }],
+    icon: [{ url: "/icon.png", type: "image/png", sizes: "3000x3000" }],
+    apple: [{ url: "/apple-icon.png", sizes: "3000x3000", type: "image/png" }],
   },
   manifest: "/manifest.webmanifest",
   category: "weather",
@@ -57,7 +54,7 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
         <Providers>
           <div className="app-shell">
             {children}
-            <SiteFooter />
+            <MainTabNavigation />
           </div>
         </Providers>
       </body>

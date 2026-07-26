@@ -77,7 +77,7 @@ export function MyPage() {
   }, [hasCheckedServerSession, router, user.type]);
 
   if (!hasCheckedServerSession) {
-    return <main className="min-h-[75dvh] pb-12" aria-busy="true"><header className="safe-top grid grid-cols-[42px_1fr_42px] items-center px-5 pb-3"><span /><div className="skeleton mx-auto h-5 w-20 rounded" /><span /></header><section className="flex items-center gap-5 px-5 py-6"><div className="skeleton size-18 rounded-full" /><div className="skeleton h-4 w-28 rounded" /></section><section className="px-5"><div className="skeleton mb-3 h-11 rounded" /><div className="grid grid-cols-3 gap-1.5">{Array.from({ length: 6 }).map((_, index) => <div key={index} className="skeleton aspect-square rounded-lg" />)}</div></section></main>;
+    return <main className="min-h-[75dvh] pb-28" aria-busy="true"><header className="safe-top grid grid-cols-[42px_1fr_42px] items-center px-5 pb-3"><span /><div className="skeleton mx-auto h-5 w-20 rounded" /><span /></header><section className="flex items-center gap-5 px-5 py-6"><div className="skeleton size-18 rounded-full" /><div className="skeleton h-4 w-28 rounded" /></section><section className="px-5"><div className="skeleton mb-3 h-11 rounded" /><div className="grid grid-cols-3 gap-1.5">{Array.from({ length: 6 }).map((_, index) => <div key={index} className="skeleton aspect-square rounded-lg" />)}</div></section></main>;
   }
 
   if (user.type !== "MEMBER") {
@@ -85,7 +85,7 @@ export function MyPage() {
   }
 
   return (
-    <main className="min-h-[75dvh] pb-12">
+    <main className="min-h-[75dvh] pb-28">
       <header className="safe-top sticky top-0 z-30 flex items-center justify-between bg-[#eef9ff] px-5 pb-3">
         <button type="button" onClick={() => router.back()} className="icon-button" aria-label="뒤로 가기"><ArrowLeft size={21} /></button>
         <h1 className="text-lg font-extrabold">마이페이지</h1>

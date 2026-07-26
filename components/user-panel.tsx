@@ -11,7 +11,6 @@ import {
   Link2,
   LogOut,
   Mail,
-  MessageCircle,
   MessageSquareText,
   Pencil,
   Send,
@@ -192,20 +191,20 @@ export function UserPanel({ open, onClose }: { open: boolean; onClose: () => voi
   };
 
   const isAccountView = Boolean(member && view === "ACCOUNT");
-  const isFeedbackView = Boolean(member && view === "FEEDBACK");
+  const isFeedbackView = view === "FEEDBACK";
   const isSubView = isAccountView || isFeedbackView;
   const memberAccount = account.data;
 
   return (
     <div className="fixed inset-0 z-50 flex items-end justify-center bg-[#173144]/30 backdrop-blur-[2px] sm:items-center sm:p-5" role="dialog" aria-modal="true" aria-labelledby="user-panel-title">
-      <div className={member ? "mb-4 max-h-[calc(100dvh-32px)] w-[calc(100%-32px)] max-w-[380px] overflow-y-auto rounded-[24px] bg-[#eef9ff] p-5 pb-6 shadow-2xl sm:mb-0" : "mb-4 w-[calc(100%-32px)] max-w-[340px] rounded-[24px] bg-[#eef9ff] p-5 pb-6 shadow-2xl sm:mb-0"}>
-        <div className={`${member ? "mb-4" : "mb-3"} grid grid-cols-[42px_1fr_42px] items-center`}>
+      <div className="mb-4 max-h-[calc(100dvh-32px)] w-[calc(100%-32px)] max-w-[380px] overflow-y-auto rounded-[24px] bg-[#eef9ff] p-5 pb-6 shadow-2xl sm:mb-0">
+        <div className="mb-4 grid grid-cols-[42px_1fr_42px] items-center">
           {isSubView ? <button type="button" onClick={() => setView("MAIN")} className="icon-button" aria-label="설정으로 돌아가기"><ArrowLeft size={20} /></button> : <span />}
-          <h2 id="user-panel-title" className="text-center text-xl font-extrabold">{member ? (isAccountView ? "계정 정보" : isFeedbackView ? "서비스 피드백" : "설정") : "로그인"}</h2>
+          <h2 id="user-panel-title" className="text-center text-xl font-extrabold">{isAccountView ? "계정 정보" : isFeedbackView ? "서비스 피드백" : member ? "설정" : "로그인"}</h2>
           <button type="button" onClick={closePanel} className="icon-button" aria-label="닫기"><X size={20} /></button>
         </div>
 
-        {member ? (isAccountView ? (
+        {isAccountView ? (
           <div className="space-y-2.5">
             <section className="overflow-hidden rounded-[20px] border border-[#e2ecf2] bg-white shadow-sm shadow-[#b8d6e6]/15">
               {account.isLoading ? <div className="space-y-4 p-4"><div className="skeleton h-10 rounded-xl" /><div className="skeleton h-10 rounded-xl" /></div> : <>
@@ -246,7 +245,7 @@ export function UserPanel({ open, onClose }: { open: boolean; onClose: () => voi
             </div>
             <button type="button" disabled={!feedback.trim() || isSubmittingFeedback} onClick={() => void submitFeedback()} className="mt-4 flex w-full items-center justify-center gap-2 rounded-2xl bg-[#45ace4] py-3.5 text-sm font-extrabold text-white transition hover:bg-[#299bd8] disabled:cursor-not-allowed disabled:bg-[#b9d5e4]"><Send size={17} /> {isSubmittingFeedback ? "제출하는 중…" : "제출하기"}</button>
           </div>
-        ) : <>
+        ) : member ? <>
           <div className="overflow-hidden rounded-[20px] border border-[#e2ecf2] bg-white">
             <button type="button" onClick={() => setView("ACCOUNT")} className="flex w-full items-center gap-3 border-b border-[#edf2f5] px-4 py-4 text-left text-sm font-extrabold"><UserRound size={18} className="text-[#718594]" /> 계정 정보 <ChevronRight size={17} className="ml-auto text-[#9aabb5]" /></button>
             <button type="button" onClick={() => setView("FEEDBACK")} className="flex w-full items-center gap-3 px-4 py-4 text-left text-sm font-extrabold"><MessageSquareText size={18} className="text-[#718594]" /> 서비스 피드백 <ChevronRight size={17} className="ml-auto text-[#9aabb5]" /></button>
@@ -256,10 +255,19 @@ export function UserPanel({ open, onClose }: { open: boolean; onClose: () => voi
             <button type="button" onClick={() => openPolicy("TERMS")} className="flex w-full items-center gap-3 px-4 py-4 text-left text-sm font-extrabold"><FileText size={18} className="text-[#718594]" /> 서비스 이용약관 <ChevronRight size={17} className="ml-auto text-[#9aabb5]" /></button>
           </div>
           <button type="button" onClick={() => void handleLogout()} className="mt-3 flex w-full items-center gap-3 rounded-[20px] border border-[#e2ecf2] bg-white px-4 py-4 text-left text-sm font-extrabold"><LogOut size={18} className="text-[#718594]" /> 로그아웃</button>
-        </>) : <div className="flex min-h-24 items-center justify-center gap-3.5">
-          <button type="button" disabled={checkingProvider !== null} onClick={() => void openServerLogin("NAVER")} className="flex size-11 items-center justify-center rounded-full bg-[#03c75a] text-lg font-black text-white shadow-sm transition hover:-translate-y-0.5 disabled:cursor-wait disabled:opacity-60" aria-label="네이버 로그인">N</button>
-          <button type="button" disabled={checkingProvider !== null} onClick={() => void openServerLogin("KAKAO")} className="flex size-11 items-center justify-center rounded-full bg-[#fee500] text-[#181600] shadow-sm transition hover:-translate-y-0.5 disabled:cursor-wait disabled:opacity-60" aria-label="카카오 로그인"><MessageCircle size={21} fill="currentColor" /></button>
-        </div>}
+          <p className="mt-4 text-center text-[10px] font-medium text-[#8ba0ae]">© 2026 날씨로그. All rights reserved.</p>
+        </> : <>
+          <div className="flex items-center justify-center gap-3.5 py-2">
+            <button type="button" disabled={checkingProvider !== null} onClick={() => void openServerLogin("NAVER")} className="flex size-11 items-center justify-center rounded-full shadow-sm transition hover:-translate-y-0.5 disabled:cursor-wait disabled:opacity-60" aria-label="네이버 로그인"><SocialIcon provider="NAVER" className="size-11" /></button>
+            <button type="button" disabled={checkingProvider !== null} onClick={() => void openServerLogin("KAKAO")} className="flex size-11 items-center justify-center rounded-full shadow-sm transition hover:-translate-y-0.5 disabled:cursor-wait disabled:opacity-60" aria-label="카카오 로그인"><SocialIcon provider="KAKAO" className="size-11" /></button>
+          </div>
+          <div className="mt-3 overflow-hidden rounded-[20px] border border-[#e2ecf2] bg-white">
+            <button type="button" onClick={() => setView("FEEDBACK")} className="flex w-full items-center gap-3 border-b border-[#edf2f5] px-4 py-4 text-left text-sm font-extrabold"><MessageSquareText size={18} className="text-[#718594]" /> 서비스 피드백 <ChevronRight size={17} className="ml-auto text-[#9aabb5]" /></button>
+            <button type="button" onClick={() => openPolicy("PRIVACY")} className="flex w-full items-center gap-3 border-b border-[#edf2f5] px-4 py-4 text-left text-sm font-extrabold"><ShieldCheck size={18} className="text-[#718594]" /> 개인정보처리방침 <ChevronRight size={17} className="ml-auto text-[#9aabb5]" /></button>
+            <button type="button" onClick={() => openPolicy("TERMS")} className="flex w-full items-center gap-3 px-4 py-4 text-left text-sm font-extrabold"><FileText size={18} className="text-[#718594]" /> 서비스 이용약관 <ChevronRight size={17} className="ml-auto text-[#9aabb5]" /></button>
+          </div>
+          <p className="mt-4 text-center text-[10px] font-medium text-[#8ba0ae]">© 2026 날씨로그. All rights reserved.</p>
+        </>}
       </div>
       {member && isNameEditOpen && <NameEditModal currentName={memberAccount?.name ?? ""} onClose={() => setIsNameEditOpen(false)} onSave={handleNameSave} />}
       {member && isWithdrawalOpen && <WithdrawalConfirmModal isSubmitting={isWithdrawing} onClose={() => setIsWithdrawalOpen(false)} onConfirm={() => void handleWithdrawal()} />}

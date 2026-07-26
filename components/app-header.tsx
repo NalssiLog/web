@@ -1,22 +1,39 @@
 "use client";
 
-import { ChevronDown, MapPin, UserRound } from "lucide-react";
-import { useAuthStore } from "@/store/auth-store";
+import { Bell } from "lucide-react";
+import Image from "next/image";
+import Link from "next/link";
+import { useToastStore } from "@/store/toast-store";
 
-export function AppHeader({ location, isDetecting, onLocationClick, onUserClick }: { location?: string; isDetecting?: boolean; onLocationClick: () => void; onUserClick: () => void }) {
-  const isMember = useAuthStore((state) => state.user.type === "MEMBER");
+export function AppHeader() {
+  const showToast = useToastStore((state) => state.showToast);
   return (
-    <header className="safe-top sticky top-0 z-30 -mx-5 mb-5 flex items-center justify-between border-b border-[#dcecf4] bg-[#eef9ff] px-5 pb-3">
-      <button type="button" onClick={onLocationClick} className="group flex min-w-0 flex-1 items-center gap-2 pr-2 text-left">
-        <span className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-white text-[#45ace4] shadow-sm shadow-[#b8d6e6]/20">
-          <MapPin size={19} />
-        </span>
-        {isDetecting ? <span className="skeleton h-5 w-40 rounded" aria-label="현재 위치 불러오는 중" /> : <span className="flex min-w-0 items-center gap-1 text-[17px] font-extrabold leading-5">
-          <span className="break-keep">{location || "동네를 선택해 주세요"}</span>
-          <ChevronDown size={18} className="shrink-0 text-[#8ba0ae] transition group-hover:translate-y-0.5" />
-        </span>}
+    <header className="safe-top sticky top-0 z-30 -mx-5 mb-1 flex items-center justify-between border-b border-[#dcecf4] bg-[#eef9ff]/95 px-5 pb-3 backdrop-blur">
+      <div className="flex min-w-0 items-center gap-2">
+        <Link href="/" className="flex size-10 shrink-0" aria-label="날씨로그 홈으로 이동">
+          <Image src="/brand/날씨로그_아이콘.png" alt="" width={40} height={40} priority className="size-full object-contain" />
+        </Link>
+        <button
+          type="button"
+          onClick={() => showToast("전국 LIVE를 준비하고 있어요.", "INFO")}
+          className="flex h-9 min-w-0 items-center gap-2 rounded-xl border border-[#d9eaf3] px-3 text-xs font-extrabold text-[#386177] transition-colors hover:border-[#b9ddea] hover:text-[#238fc9]"
+          aria-label="전국 라이브 안내"
+        >
+          <span className="relative flex size-2" aria-hidden="true">
+            <span className="absolute inline-flex size-full animate-ping rounded-full bg-[#f06f6f] opacity-50" />
+            <span className="relative inline-flex size-2 rounded-full bg-[#e45f5f]" />
+          </span>
+          <span className="truncate">전국 LIVE</span>
+        </button>
+      </div>
+      <button
+        type="button"
+        onClick={() => showToast("알림 기능을 준비하고 있어요.", "INFO")}
+        className="icon-button shrink-0"
+        aria-label="알림 기능 안내"
+      >
+        <Bell size={20} />
       </button>
-      {isMember ? <button type="button" onClick={onUserClick} className="flex size-11 items-center justify-center rounded-2xl bg-white text-[#718594] shadow-sm shadow-[#b8d6e6]/20 transition hover:text-[#268fc7]" aria-label="사용자 메뉴"><UserRound size={23} /></button> : <button type="button" onClick={onUserClick} className="flex h-11 items-center justify-center rounded-2xl bg-white px-4 text-sm font-extrabold text-[#268fc7] shadow-sm shadow-[#b8d6e6]/20 transition hover:bg-[#f8fcfe]" aria-label="로그인">로그인</button>}
     </header>
   );
 }
