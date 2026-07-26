@@ -47,7 +47,6 @@ export function NameEditModal({
             id="member-name"
             value={name}
             maxLength={30}
-            autoFocus
             autoComplete="name"
             onChange={(event) => {
               const nextName = event.currentTarget.value;

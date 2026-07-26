@@ -10,13 +10,12 @@ import { useLocationStore } from "@/store/location-store";
 const locationLogger = logger.child("location.detection");
 const refreshedLocationIds = new Set<string>();
 
-export function useCurrentLocation({ refreshOnResume = false }: { refreshOnResume?: boolean } = {}) {
+export function useCurrentLocation() {
   const { location, setLocation, hasAttemptedDetection, markDetectionAttempted } = useLocationStore();
   const [isDetecting, setIsDetecting] = useState(false);
   const [needsManualInput, setNeedsManualInputState] = useState(false);
   const [detectionError, setDetectionError] = useState("");
   const detectionPromiseRef = useRef<Promise<Location | null> | null>(null);
-  const lastAutomaticDetectionAtRef = useRef(0);
   const manualInputDismissedRef = useRef(false);
 
   const setNeedsManualInput = useCallback((next: boolean) => {
@@ -87,42 +86,17 @@ export function useCurrentLocation({ refreshOnResume = false }: { refreshOnResum
   }, [markDetectionAttempted, requestManualInput, setLocation]);
 
   useEffect(() => {
-    if (hasAttemptedDetection) return;
+    if (hasAttemptedDetection || location) return;
     const timeout = window.setTimeout(() => {
-      lastAutomaticDetectionAtRef.current = Date.now();
       void detectLocation(true);
     }, 0);
     return () => window.clearTimeout(timeout);
-  }, [detectLocation, hasAttemptedDetection]);
+  }, [detectLocation, hasAttemptedDetection, location]);
 
   useEffect(() => {
-    if (!refreshOnResume) return;
-    let hiddenAt: number | null = null;
-    const refreshCurrentLocation = () => {
-      const now = Date.now();
-      if (now - lastAutomaticDetectionAtRef.current < 30_000) return;
-      lastAutomaticDetectionAtRef.current = now;
-      void detectLocation(true);
-    };
-    const handlePageShow = (event: PageTransitionEvent) => {
-      if (event.persisted) refreshCurrentLocation();
-    };
-    const handleVisibilityChange = () => {
-      if (document.visibilityState === "hidden") {
-        hiddenAt = Date.now();
-        return;
-      }
-      if (hiddenAt && Date.now() - hiddenAt >= 30_000) refreshCurrentLocation();
-      hiddenAt = null;
-    };
-
-    window.addEventListener("pageshow", handlePageShow);
-    document.addEventListener("visibilitychange", handleVisibilityChange);
-    return () => {
-      window.removeEventListener("pageshow", handlePageShow);
-      document.removeEventListener("visibilitychange", handleVisibilityChange);
-    };
-  }, [detectLocation, refreshOnResume]);
+    if (location || !hasAttemptedDetection || isDetecting) return;
+    requestManualInput();
+  }, [hasAttemptedDetection, isDetecting, location, requestManualInput]);
 
   useEffect(() => {
     const locationId = location?.id;

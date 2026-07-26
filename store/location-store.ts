@@ -22,31 +22,39 @@ export const useLocationStore = create<LocationState>()(
     }),
     {
       name: "nalssilog-location",
-      version: 2,
+      version: 3,
       migrate: (persistedState) => {
-        const state = persistedState as LocationState;
-        if (state.location?.label === "송파구 잠실동") {
+        const state = persistedState as Partial<LocationState>;
+        const storedLocation = state.location ?? null;
+        const hasAttemptedDetection = state.hasAttemptedDetection ?? Boolean(storedLocation);
+        if (storedLocation?.label === "송파구 잠실동") {
           return {
-            ...state,
             location: null,
+            hasAttemptedDetection,
           };
         }
-        if (state.location) {
-          const supportedLocation = findSupportedLocation(state.location);
+        if (storedLocation) {
+          const supportedLocation = findSupportedLocation(storedLocation);
           if (supportedLocation) {
             return {
-              ...state,
               location: {
                 ...supportedLocation,
-                latitude: state.location.latitude,
-                longitude: state.location.longitude,
+                latitude: storedLocation.latitude,
+                longitude: storedLocation.longitude,
               },
+              hasAttemptedDetection,
             };
           }
         }
-        return state;
+        return {
+          location: storedLocation,
+          hasAttemptedDetection,
+        };
       },
-      partialize: (state) => ({ location: state.location }),
+      partialize: (state) => ({
+        location: state.location,
+        hasAttemptedDetection: state.hasAttemptedDetection,
+      }),
     },
   ),
 );

@@ -6,8 +6,10 @@ import { ArrowLeft, ChevronRight, ImagePlus, LoaderCircle, MapPin, X } from "luc
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { ChangeEvent, FormEvent, useEffect, useMemo, useRef, useState } from "react";
+import { flushSync } from "react-dom";
 import { useForm, useWatch } from "react-hook-form";
 import { z } from "zod";
+import { LocationDetectingIndicator } from "@/components/location-detecting-indicator";
 import { LocationPicker } from "@/components/location-picker";
 import { PhotoSourceSheet } from "@/components/photo-source-sheet";
 import { useCurrentLocation } from "@/hooks/use-current-location";
@@ -33,7 +35,6 @@ const schema = z.object({
 type ReportFormValues = z.infer<typeof schema>;
 const reportDraftSchema = z.object({
   updatedAt: z.number(),
-  step: z.union([z.literal(1), z.literal(2)]),
   selectedReportLocation: z.object({
     id: z.string().optional(),
     label: z.string(),
@@ -84,12 +85,12 @@ interface StatusOption<T extends string> { value: T; label: string }
 
 function StatusField<T extends string>({ title, options, value, onChange }: { title: string; options: ReadonlyArray<StatusOption<T>>; value?: T; onChange: (value?: T) => void }) {
   return (
-    <fieldset className="mt-8">
+    <fieldset className="mt-6">
       <legend className="text-[17px] font-extrabold">{title} <span className="text-[#45ace4]">*</span></legend>
       <div className="mt-3 grid grid-cols-3 gap-2">
         {options.map((option) => {
           const selected = value === option.value;
-          return <button key={option.value} type="button" onClick={() => onChange(selected ? undefined : option.value)} className={`flex min-h-16 items-center justify-center rounded-[18px] border-2 p-2 transition ${selected ? "border-[#45ace4] bg-[#eaf7ff] text-[#268fc7] ring-2 ring-[#45ace4]/10" : "border-[#d2e3ec] text-[#526a7a]"}`} aria-pressed={selected}>
+          return <button key={option.value} type="button" onClick={() => onChange(selected ? undefined : option.value)} className={`flex min-h-14 items-center justify-center rounded-[18px] border-2 p-2 transition ${selected ? "border-[#45ace4] bg-[#eaf7ff] text-[#268fc7] ring-2 ring-[#45ace4]/10" : "border-[#d2e3ec] text-[#526a7a]"}`} aria-pressed={selected}>
             <span className="text-[13px] font-bold">{option.label}</span>
           </button>;
         })}
@@ -135,7 +136,6 @@ export function ReportForm() {
     const timeout = window.setTimeout(() => {
       const draft = readReportDraft();
       if (draft) {
-        setStep(draft.step);
         setSelectedReportLocation(draft.selectedReportLocation);
         reset({
           content: draft.content,
@@ -157,7 +157,6 @@ export function ReportForm() {
     const timeout = window.setTimeout(() => {
       writeReportDraft({
         updatedAt: Date.now(),
-        step,
         selectedReportLocation,
         content,
         temperature,
@@ -167,7 +166,7 @@ export function ReportForm() {
       });
     }, 150);
     return () => window.clearTimeout(timeout);
-  }, [content, files.length, isDraftReady, precipitation, selectedReportLocation, step, sunlight, temperature]);
+  }, [content, files.length, isDraftReady, precipitation, selectedReportLocation, sunlight, temperature]);
   useEffect(() => {
     const closePhotoSource = () => setIsPhotoSourceOpen(false);
     const closePhotoSourceWhenVisible = () => {
@@ -209,6 +208,28 @@ export function ReportForm() {
       setUploadProgress(null);
     },
   });
+
+  useEffect(() => {
+    const discardDraftBeforeHistoryExit = () => {
+      if (mutation.isPending) return;
+      clearReportDraft();
+      flushSync(() => {
+        setStep(1);
+        setSelectedReportLocation(null);
+        reset({ content: "", images: [] });
+      });
+    };
+    const resetStepAfterPageRestore = (event: PageTransitionEvent) => {
+      if (event.persisted && !mutation.isPending) setStep(1);
+    };
+
+    window.addEventListener("popstate", discardDraftBeforeHistoryExit);
+    window.addEventListener("pageshow", resetStepAfterPageRestore);
+    return () => {
+      window.removeEventListener("popstate", discardDraftBeforeHistoryExit);
+      window.removeEventListener("pageshow", resetStepAfterPageRestore);
+    };
+  }, [mutation.isPending, reset]);
 
   useEffect(() => {
     if (!mutation.isPending) return;
@@ -293,7 +314,7 @@ export function ReportForm() {
       <header className="safe-top pb-2">
         <div className="flex min-h-9 items-center justify-between">
           <button type="button" disabled={mutation.isPending} onClick={() => step === 2 ? setStep(1) : router.back()} className="header-back-button disabled:cursor-not-allowed disabled:opacity-50" aria-label={step === 2 ? "이전 단계" : "뒤로 가기"}><ArrowLeft size={18} /></button>
-          <h1 className="text-lg font-extrabold">지금 날씨 제보하기</h1>
+          <h1 className="text-lg font-extrabold">날씨 제보하기</h1>
           <span className="w-9" />
         </div>
         <div className="mt-3 flex items-center justify-center" aria-label={`2페이지 중 ${step}페이지`}>
@@ -307,12 +328,12 @@ export function ReportForm() {
         <input type="hidden" {...register("temperature")} />
         <input type="hidden" {...register("precipitation")} />
         <input type="hidden" {...register("sunlight")} />
-        <button type="button" onClick={() => setNeedsManualInput(true)} className="flex w-full items-center gap-3 rounded-[20px] border-2 border-[#d2e3ec] p-4 text-left">
-          <span className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-[#eef9ff] text-[#45ace4]"><MapPin size={20} /></span>
-          <span className="min-w-0 flex-1"><span className="block text-xs font-semibold text-[#718594]">현재 위치</span>{isDetecting && !needsManualInput ? <span className="skeleton mt-1 block h-4 w-40 max-w-full rounded" aria-label="현재 위치 불러오는 중" /> : <span className="block truncate font-extrabold">{reportLocation?.label ?? "위치를 설정해 주세요"}</span>}</span>
+        <button type="button" onClick={() => setNeedsManualInput(true)} className="flex w-full items-center gap-3 rounded-[20px] border-2 border-[#d2e3ec] p-3 text-left">
+          <span className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-[#eef9ff] text-[#45ace4]"><MapPin size={18} /></span>
+          <span className="min-w-0 flex-1">{isDetecting && !needsManualInput ? <LocationDetectingIndicator iconPosition="right" /> : <span className="block truncate text-base font-extrabold">{reportLocation?.label ?? "위치를 설정해 주세요"}</span>}</span>
         </button>
 
-        <section className="mt-8">
+        <section className="mt-5">
           <h2 className="text-[17px] font-extrabold">사진 <span className="align-middle text-[11px] font-semibold text-[#8ba0ae]">최대 3장</span></h2>
           <div className="mt-3 grid grid-cols-3 gap-2.5">
             {Array.from({ length: 3 }).map((_, index) => {

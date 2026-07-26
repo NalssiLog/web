@@ -16,6 +16,7 @@ html { background: #deeff8; }
 body {
   margin: 0;
   min-height: 100vh;
+  min-height: 100dvh;
   color: var(--ink);
   background: linear-gradient(145deg, #deeff8 0%, #f4fbff 50%, #ddecf5 100%);
   font-family: "Pretendard Variable", Pretendard, "Apple SD Gothic Neo", "Noto Sans KR", sans-serif;
@@ -27,12 +28,13 @@ button { cursor: pointer; }
   position: relative;
   width: min(100%, 480px);
   min-height: 100vh;
+  min-height: 100dvh;
   margin: 0 auto;
   overflow-x: clip;
   background: #eef9ff;
   box-shadow: 0 0 48px rgba(48, 98, 126, .12);
 }
-.page { min-height: 100vh; padding: 0 20px 112px; }
+.page { min-height: 100vh; min-height: 100dvh; padding: 0 20px 112px; }
 .main-tab-page { padding-bottom: 80px; }
 .safe-top { padding-top: max(8px, env(safe-area-inset-top)); }
 .home-header-top { padding-top: max(9px, env(safe-area-inset-top)); }

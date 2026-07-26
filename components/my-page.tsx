@@ -8,7 +8,8 @@ import { MyReportList } from "@/components/my-report-list";
 import { NicknameEditModal } from "@/components/nickname-edit-modal";
 import { ProfileImageModal, type ProfileImageSelection } from "@/components/profile-image-modal";
 import { ProfilePreviewModal } from "@/components/profile-preview-modal";
-import { UserPanel } from "@/components/user-panel";
+import { UserPanel, type UserPanelView } from "@/components/user-panel";
+import { consumeAccountPanelReturn } from "@/lib/account-panel-return";
 import { memberApi } from "@/lib/api/member-api";
 import { resolveProfileImage } from "@/lib/constants";
 import { optimizeAvatarImage } from "@/lib/image";
@@ -24,6 +25,7 @@ export function MyPage() {
   const setNickname = useAuthStore((state) => state.setNickname);
   const showToast = useToastStore((state) => state.showToast);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+  const [userPanelInitialView, setUserPanelInitialView] = useState<UserPanelView>("MAIN");
   const [isProfileImageOpen, setIsProfileImageOpen] = useState(false);
   const [isProfilePreviewOpen, setIsProfilePreviewOpen] = useState(false);
   const [isNicknameOpen, setIsNicknameOpen] = useState(false);
@@ -76,6 +78,16 @@ export function MyPage() {
     if (hasCheckedServerSession && user.type !== "MEMBER") router.replace("/");
   }, [hasCheckedServerSession, router, user.type]);
 
+  useEffect(() => {
+    if (!hasCheckedServerSession || user.type !== "MEMBER") return;
+    const timeout = window.setTimeout(() => {
+      if (!consumeAccountPanelReturn()) return;
+      setUserPanelInitialView("ACCOUNT");
+      setIsSettingsOpen(true);
+    }, 0);
+    return () => window.clearTimeout(timeout);
+  }, [hasCheckedServerSession, user.type]);
+
   if (!hasCheckedServerSession) {
     return <main className="min-h-[75dvh] pb-[72px]" aria-busy="true"><header className="safe-top spacious-page-header grid grid-cols-[36px_1fr_36px] items-center px-5 pb-2"><span /><div className="skeleton mx-auto h-5 w-20 rounded" /><span /></header><section className="flex items-center gap-5 px-5 pb-6 pt-0"><div className="skeleton size-18 rounded-full" /><div className="skeleton h-4 w-28 rounded" /></section><section className="px-5"><div className="skeleton mb-3 h-11 rounded" /><div className="grid grid-cols-3 gap-1.5">{Array.from({ length: 6 }).map((_, index) => <div key={index} className="skeleton aspect-square rounded-lg" />)}</div></section></main>;
   }
@@ -89,7 +101,7 @@ export function MyPage() {
       <header className="safe-top spacious-page-header sticky top-0 z-30 grid grid-cols-[36px_1fr_36px] items-center bg-[#eef9ff] px-5 pb-2">
         <span aria-hidden="true" />
         <h1 className="text-center text-lg font-extrabold">프로필</h1>
-        <button type="button" onClick={() => setIsSettingsOpen(true)} className="header-action-button justify-self-end" aria-label="설정 열기"><Settings size={18} /></button>
+        <button type="button" onClick={() => { setUserPanelInitialView("MAIN"); setIsSettingsOpen(true); }} className="header-action-button justify-self-end" aria-label="설정 열기"><Settings size={18} /></button>
       </header>
 
       <section className="px-5 pb-5 pt-0">
@@ -112,7 +124,7 @@ export function MyPage() {
         <MyReportList memberId={user.id} columns={3} />
       </section>
 
-      <UserPanel open={isSettingsOpen} onClose={() => setIsSettingsOpen(false)} />
+      {isSettingsOpen && <UserPanel open initialView={userPanelInitialView} onClose={() => { setIsSettingsOpen(false); setUserPanelInitialView("MAIN"); }} />}
       {isProfileImageOpen && <ProfileImageModal current={avatarUrl} onClose={() => setIsProfileImageOpen(false)} onChange={saveProfileImage} />}
       {isProfilePreviewOpen && <ProfilePreviewModal avatarUrl={avatarUrl} onClose={() => setIsProfilePreviewOpen(false)} />}
       {isNicknameOpen && <NicknameEditModal currentNickname={nickname} onClose={() => setIsNicknameOpen(false)} onSave={saveNickname} />}
