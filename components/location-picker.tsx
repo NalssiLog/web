@@ -54,6 +54,7 @@ function LocationPickerDialog({ current, isDetecting, detectionError, required, 
   const [debouncedValue, setDebouncedValue] = useState("");
   const [selectedLocation, setSelectedLocation] = useState<Location | null>(current ?? null);
   const [activeTab, setActiveTab] = useState<LocationTab>("SEARCH");
+  const [popularOpenedAt] = useState(() => Date.now());
   const [isPopularRefreshAnimating, setIsPopularRefreshAnimating] = useState(false);
   const [pages, setPages] = useState<LocationPages>({
     SEARCH: 1,
@@ -282,12 +283,10 @@ function LocationPickerDialog({ current, isDetecting, detectionError, required, 
                   : <ServerPaginatedLocationList label="즐겨찾기" empty="아직 즐겨찾는 동네가 없어요." locations={favorites} page={visiblePages.FAVORITES} totalPages={serverFavorites.data?.totalPages ?? 0} hasPrevious={serverFavorites.data?.hasPrevious ?? false} hasNext={serverFavorites.data?.hasNext ?? false} isPageLoading={serverFavorites.isPlaceholderData && serverFavorites.isFetching} selectedLocation={selectedLocation} onPageChange={(page) => changePage("FAVORITES", page)} onSelect={chooseLocation} isFavorite={isFavorite} onToggleFavorite={toggleFavorite} favoriteDisabled={favoriteMutation.isPending || serverFavoriteCatalog.isFetching} />
               : <div className="flex min-h-44 -translate-y-2 flex-col items-center justify-center px-6 text-center text-[#8d6b27]"><LockKeyhole size={25} /><p className="mt-3 text-sm font-extrabold">회원 전용 기능이에요</p><p className="mt-1 text-xs font-semibold leading-5 text-[#9a8050]">로그인하면 자주 보는 동네를<br />즐겨찾기에 저장할 수 있어요.</p></div>)}
             {activeTab === "POPULAR" && <>
-              <PopularRefreshControl updatedAt={serverPopular.dataUpdatedAt} calculatedAt={serverPopular.data?.calculatedAt} isFetching={serverPopular.isFetching || isPopularRefreshAnimating} onRefresh={() => void refreshPopular()} />
-              {serverPopular.isError && popularLocations.length === 0
-                ? <LocationLoadError onRetry={() => serverPopular.refetch()} />
-                : serverPopular.isPending
-                  ? <div className="space-y-2 px-3 py-3">{Array.from({ length: 5 }).map((_, index) => <div key={index} className="skeleton h-10 rounded-xl" />)}</div>
-                  : <PaginatedPopularLocationList label="인기 동네" empty="아직 인기 동네가 없어요." items={popularItems} page={visiblePages.POPULAR} selectedLocation={selectedLocation} onPageChange={(page) => changePage("POPULAR", page)} onSelect={chooseLocation} isFavorite={isMember ? isFavorite : undefined} onToggleFavorite={isMember ? toggleFavorite : undefined} favoriteDisabled={favoriteMutation.isPending || serverFavoriteCatalog.isFetching} />}
+              <PopularRefreshControl updatedAt={serverPopular.dataUpdatedAt || popularOpenedAt} calculatedAt={serverPopular.data?.calculatedAt} isFetching={serverPopular.isFetching || isPopularRefreshAnimating} onRefresh={() => void refreshPopular()} />
+              {popularLocations.length === 0
+                ? <p className="flex min-h-40 items-center justify-center px-3 text-center text-sm font-semibold text-[#8ba0ae]">인기 동네를 찾고 있어요</p>
+                : <PaginatedPopularLocationList label="인기 동네" empty="인기 동네를 찾고 있어요" items={popularItems} page={visiblePages.POPULAR} selectedLocation={selectedLocation} onPageChange={(page) => changePage("POPULAR", page)} onSelect={chooseLocation} isFavorite={isMember ? isFavorite : undefined} onToggleFavorite={isMember ? toggleFavorite : undefined} favoriteDisabled={favoriteMutation.isPending || serverFavoriteCatalog.isFetching} />}
             </>}
           </div>
           <button type="submit" disabled={!selectedLocation && !exactMatch} className={`primary-button ${activeTab === "POPULAR" ? "mt-2" : "mt-4"}`}>확인</button>
@@ -311,11 +310,9 @@ function PopularRefreshControl({ updatedAt, calculatedAt, isFetching, onRefresh 
   isFetching: boolean;
   onRefresh: () => void;
 }) {
-  const updatedDate = updatedAt ? new Date(updatedAt) : null;
+  const updatedDate = new Date(updatedAt);
   const calculatedDate = calculatedAt ? new Date(calculatedAt) : null;
-  const updatedAtLabel = updatedDate && !Number.isNaN(updatedDate.getTime())
-    ? `${format(updatedDate, "a h:mm", { locale: ko })} 기준`
-    : "집계 대기";
+  const updatedAtLabel = `${format(updatedDate, "a h:mm", { locale: ko })} 기준`;
   const calculatedAtLabel = calculatedDate && !Number.isNaN(calculatedDate.getTime())
     ? `인기 순위 집계: ${format(calculatedDate, "M월 d일 a h:mm", { locale: ko })}`
     : undefined;
