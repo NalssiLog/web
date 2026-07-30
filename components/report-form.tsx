@@ -5,7 +5,7 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { ArrowLeft, ChevronRight, ImagePlus, LoaderCircle, MapPin, X } from "lucide-react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
-import { ChangeEvent, FormEvent, useEffect, useMemo, useRef, useState } from "react";
+import { ChangeEvent, FormEvent, useEffect, useRef, useState } from "react";
 import { flushSync } from "react-dom";
 import { useForm, useWatch } from "react-hook-form";
 import { z } from "zod";
@@ -13,6 +13,7 @@ import { LocationDetectingIndicator } from "@/components/location-detecting-indi
 import { LocationPicker } from "@/components/location-picker";
 import { PhotoSourceSheet } from "@/components/photo-source-sheet";
 import { useCurrentLocation } from "@/hooks/use-current-location";
+import { useModalNavigation } from "@/hooks/use-modal-navigation";
 import { weatherApi } from "@/lib/api";
 import { PRECIPITATION_OPTIONS, SUGGESTED_MESSAGES, SUNLIGHT_OPTIONS, TEMPERATURE_OPTIONS, getLocationName } from "@/lib/constants";
 import { normalizeSelectedImage, optimizeReportImage } from "@/lib/image";
@@ -106,6 +107,7 @@ export function ReportForm() {
   const cameraInputRef = useRef<HTMLInputElement>(null);
   const uploadControllerRef = useRef<AbortController | null>(null);
   const submitLockRef = useRef(false);
+  const previewUrlsRef = useRef(new Map<File, string>());
   const [step, setStep] = useState<1 | 2>(1);
   const [selectedReportLocation, setSelectedReportLocation] = useState<Location | null>(null);
   const [fileError, setFileError] = useState("");
@@ -113,6 +115,7 @@ export function ReportForm() {
   const [isPhotoSourceOpen, setIsPhotoSourceOpen] = useState(false);
   const [uploadProgress, setUploadProgress] = useState<ReportUploadProgress | null>(null);
   const [isDraftReady, setIsDraftReady] = useState(false);
+  const [previews, setPreviews] = useState<Array<{ file: File; url: string }>>([]);
   const showToast = useToastStore((state) => state.showToast);
   const { location, setLocation, isDetecting, detectionError, needsManualInput, setNeedsManualInput, detectLocation } = useCurrentLocation();
   const { register, handleSubmit, control, setValue, reset, resetField, formState: { errors } } = useForm<ReportFormValues>({
@@ -129,8 +132,25 @@ export function ReportForm() {
   const reportLocation = selectedReportLocation ?? location;
   const canGoToStory = Boolean(reportLocation && temperature && precipitation && sunlight);
   const canSubmitReport = content.trim().length > 0 && contentLength <= 100;
-  const previews = useMemo(() => files.map((file) => ({ file, url: URL.createObjectURL(file) })), [files]);
-  useEffect(() => () => previews.forEach(({ url }) => URL.revokeObjectURL(url)), [previews]);
+  useEffect(() => {
+    const activeFiles = new Set(files);
+    previewUrlsRef.current.forEach((url, file) => {
+      if (activeFiles.has(file)) return;
+      URL.revokeObjectURL(url);
+      previewUrlsRef.current.delete(file);
+    });
+    setPreviews(files.map((file) => {
+      const existingUrl = previewUrlsRef.current.get(file);
+      if (existingUrl) return { file, url: existingUrl };
+      const url = URL.createObjectURL(file);
+      previewUrlsRef.current.set(file, url);
+      return { file, url };
+    }));
+  }, [files]);
+  useEffect(() => () => {
+    previewUrlsRef.current.forEach((url) => URL.revokeObjectURL(url));
+    previewUrlsRef.current.clear();
+  }, []);
   useEffect(() => () => uploadControllerRef.current?.abort(), []);
   useEffect(() => {
     const timeout = window.setTimeout(() => {
@@ -196,7 +216,7 @@ export function ReportForm() {
       queryClient.invalidateQueries({ queryKey: ["weather-summary"] });
       queryClient.invalidateQueries({ queryKey: ["my-weather-reports"] });
       showToast("날씨 제보를 올렸어요.", "SUCCESS");
-      router.replace(`/reports/${report.id}`);
+      dismissStoryStep(() => router.replace(`/reports/${report.id}`));
     },
     onError: (error) => {
       if (error instanceof DOMException && error.name === "AbortError") return;
@@ -207,6 +227,18 @@ export function ReportForm() {
       uploadControllerRef.current = null;
       setUploadProgress(null);
     },
+  });
+
+  const dismissStoryStep = useModalNavigation({
+    open: step === 2,
+    onBack: () => {
+      if (mutation.isPending) {
+        showToast("제보를 등록하는 동안에는 화면을 이동할 수 없어요.", "INFO");
+        return;
+      }
+      setStep(1);
+    },
+    onDismiss: () => setStep(1),
   });
 
   useEffect(() => {
@@ -238,19 +270,12 @@ export function ReportForm() {
       event.preventDefault();
       event.returnValue = "";
     };
-    const preventHistoryBack = (event: PopStateEvent) => {
-      event.stopImmediatePropagation();
-      window.history.forward();
-      showToast("제보를 등록하는 동안에는 화면을 이동할 수 없어요.", "INFO");
-    };
 
     window.addEventListener("beforeunload", preventPageExit);
-    window.addEventListener("popstate", preventHistoryBack, true);
     return () => {
       window.removeEventListener("beforeunload", preventPageExit);
-      window.removeEventListener("popstate", preventHistoryBack, true);
     };
-  }, [mutation.isPending, showToast]);
+  }, [mutation.isPending]);
 
   const addImages = async (event: ChangeEvent<HTMLInputElement>) => {
     const requested = Array.from(event.target.files ?? []).map(normalizeSelectedImage);
@@ -272,7 +297,10 @@ export function ReportForm() {
     setFileError("");
     setIsOptimizingImages(true);
     try {
-      const optimized = await Promise.all(selected.map(optimizeReportImage));
+      const optimized: File[] = [];
+      for (const file of selected) {
+        optimized.push(await optimizeReportImage(file));
+      }
       if (optimized.some((file) => file.size > MAX_IMAGE_SIZE)) {
         setFileError("최적화 후에도 5MB를 넘는 사진이 있어요. 다른 사진을 선택해 주세요.");
         return;
@@ -300,7 +328,8 @@ export function ReportForm() {
   };
 
   const goToStoryStep = () => {
-    if (canGoToStory) setStep(2);
+    if (!canGoToStory) return;
+    setStep(2);
   };
 
   const uploadLabel = uploadProgress?.stage === "UPLOADING"
@@ -312,10 +341,10 @@ export function ReportForm() {
   return (
     <form onSubmit={submit} className="page" aria-busy={mutation.isPending}>
       <header className="safe-top pb-2">
-        <div className="flex min-h-9 items-center justify-between">
-          <button type="button" disabled={mutation.isPending} onClick={() => step === 2 ? setStep(1) : router.back()} className="header-back-button disabled:cursor-not-allowed disabled:opacity-50" aria-label={step === 2 ? "이전 단계" : "뒤로 가기"}><ArrowLeft size={18} /></button>
-          <h1 className="text-lg font-extrabold">날씨 제보하기</h1>
-          <span className="w-9" />
+        <div className="grid min-h-9 grid-cols-[36px_1fr_36px] items-center">
+          <button type="button" disabled={mutation.isPending} onClick={() => step === 2 ? dismissStoryStep() : router.back()} className="header-back-button justify-self-start disabled:cursor-not-allowed disabled:opacity-50" aria-label={step === 2 ? "이전 단계" : "뒤로 가기"}><ArrowLeft size={18} /></button>
+          <h1 className="text-center text-lg font-extrabold">날씨 제보하기</h1>
+          <span />
         </div>
         <div className="mt-3 flex items-center justify-center" aria-label={`2페이지 중 ${step}페이지`}>
           <span className="flex size-7 items-center justify-center rounded-full border-2 border-[#45ace4] bg-[#45ace4] text-xs font-extrabold text-white">1</span>
@@ -328,7 +357,7 @@ export function ReportForm() {
         <input type="hidden" {...register("temperature")} />
         <input type="hidden" {...register("precipitation")} />
         <input type="hidden" {...register("sunlight")} />
-        <button type="button" onClick={() => setNeedsManualInput(true)} className="flex w-full items-center gap-3 rounded-[20px] border-2 border-[#d2e3ec] p-3 text-left">
+        <button type="button" onClick={() => setNeedsManualInput(true)} className="mt-1 flex w-full items-center gap-3 rounded-[20px] border-2 border-[#d2e3ec] p-3 text-left">
           <span className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-[#eef9ff] text-[#45ace4]"><MapPin size={18} /></span>
           <span className="min-w-0 flex-1">{isDetecting && !needsManualInput ? <LocationDetectingIndicator iconPosition="right" /> : <span className="block truncate text-base font-extrabold">{reportLocation?.label ?? "위치를 설정해 주세요"}</span>}</span>
         </button>
