@@ -141,10 +141,12 @@ export function UserPanel({
   const handleLogout = async () => {
     try {
       await authApi.logout();
-      queryClient.clear();
-      clearUser();
       showToast("로그아웃했어요.", "INFO");
-      closePanel(() => router.replace("/"));
+      closePanel(() => {
+        queryClient.clear();
+        clearUser();
+        router.replace("/");
+      });
     } catch (error) {
       showToast(error instanceof Error ? error.message : "로그아웃하지 못했어요.", "ERROR");
     }
@@ -214,10 +216,12 @@ export function UserPanel({
     setIsWithdrawing(true);
     try {
       await authApi.withdraw();
-      queryClient.clear();
-      clearUser();
       showToast("회원 탈퇴가 완료됐어요.", "SUCCESS");
-      closePanel(() => router.replace("/"));
+      closePanel(() => {
+        queryClient.clear();
+        clearUser();
+        router.replace("/");
+      });
     } catch (error) {
       showToast(error instanceof Error ? error.message : "회원 탈퇴를 완료하지 못했어요.", "ERROR");
     } finally {

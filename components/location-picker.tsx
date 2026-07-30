@@ -79,7 +79,7 @@ function LocationPickerDialog({ current, isDetecting, detectionError, required, 
     queryFn: locationApi.popular,
     enabled: activeTab === "POPULAR",
     staleTime: 60_000,
-    refetchInterval: activeTab === "POPULAR" ? 30_000 : false,
+    refetchInterval: activeTab === "POPULAR" ? 10_000 : false,
     refetchIntervalInBackground: false,
     retry: false,
   });
@@ -314,7 +314,7 @@ function PopularRefreshControl({ updatedAt, calculatedAt, isFetching, onRefresh 
   const updatedDate = updatedAt ? new Date(updatedAt) : null;
   const calculatedDate = calculatedAt ? new Date(calculatedAt) : null;
   const updatedAtLabel = updatedDate && !Number.isNaN(updatedDate.getTime())
-    ? `${format(updatedDate, "a h:mm", { locale: ko })} 확인`
+    ? `${format(updatedDate, "a h:mm", { locale: ko })} 기준`
     : "집계 대기";
   const calculatedAtLabel = calculatedDate && !Number.isNaN(calculatedDate.getTime())
     ? `인기 순위 집계: ${format(calculatedDate, "M월 d일 a h:mm", { locale: ko })}`
