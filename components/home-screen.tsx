@@ -17,7 +17,7 @@ import { getLocationName } from "@/lib/constants";
 import { useToastStore } from "@/store/toast-store";
 
 export function HomeScreen() {
-  const { location, setLocation, isDetecting, detectionError, needsManualInput, setNeedsManualInput, detectLocation } = useCurrentLocation();
+  const { location, setLocation, isDetecting, detectionError, needsManualInput, setNeedsManualInput, detectLocation } = useCurrentLocation({ refreshOnHomeResume: true });
   const showToast = useToastStore((state) => state.showToast);
   const loadMoreRef = useRef<HTMLDivElement>(null);
   const locationLabel = location ? getLocationName(location, "short") : "";
