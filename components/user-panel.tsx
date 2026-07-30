@@ -1,7 +1,7 @@
 "use client";
 
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { flushSync } from "react-dom";
 import { useRouter } from "next/navigation";
 import {
@@ -22,6 +22,7 @@ import {
 import { NameEditModal } from "@/components/name-edit-modal";
 import { WithdrawalConfirmModal } from "@/components/withdrawal-confirm-modal";
 import { SocialIcon } from "@/components/social-icon";
+import { useModalNavigation } from "@/hooks/use-modal-navigation";
 import { authApi } from "@/lib/api/auth-api";
 import { resolveApiUrl } from "@/lib/api/config";
 import { memberApi } from "@/lib/api/member-api";
@@ -64,13 +65,39 @@ export function UserPanel({
   const [feedback, setFeedback] = useState("");
   const [isSubmittingFeedback, setIsSubmittingFeedback] = useState(false);
   const [checkingProvider, setCheckingProvider] = useState<SocialProvider | null>(null);
+  const socialNavigationRequestRef = useRef(0);
+  const isOpenRef = useRef(open);
   const member = user.type === "MEMBER" ? user : null;
+  const closePanelState = () => {
+    socialNavigationRequestRef.current += 1;
+    setView("MAIN");
+    setIsWithdrawalOpen(false);
+    setIsNameEditOpen(false);
+    setCheckingProvider(null);
+    onClose();
+  };
+  const closePanel = useModalNavigation({
+    open,
+    onBack: () => {
+      if (isSubmittingFeedback || isWithdrawing) return;
+      if ((member && view === "ACCOUNT") || view === "FEEDBACK") {
+        setView("MAIN");
+        return;
+      }
+      closePanelState();
+    },
+    onDismiss: closePanelState,
+  });
   const account = useQuery({
     queryKey: ["members", "me"],
     queryFn: memberApi.getMe,
     enabled: open && Boolean(member),
     retry: false,
   });
+
+  useEffect(() => {
+    isOpenRef.current = open;
+  }, [open]);
 
   useEffect(() => {
     const resetSocialNavigationState = () => setCheckingProvider(null);
@@ -92,25 +119,20 @@ export function UserPanel({
 
   if (!open) return null;
 
-  const closePanel = () => {
-    setView("MAIN");
-    setIsWithdrawalOpen(false);
-    setIsNameEditOpen(false);
-    setCheckingProvider(null);
-    onClose();
-  };
-
-  const navigateToSocialAuth = (url: string) => {
+  const navigateToSocialAuth = (url: string, requestId: number) => {
+    if (!isOpenRef.current || socialNavigationRequestRef.current !== requestId) return;
     flushSync(() => setCheckingProvider(null));
-    window.location.assign(url);
+    closePanel(() => window.location.assign(url));
   };
 
   const openServerLogin = async (provider: SocialProvider) => {
+    const requestId = ++socialNavigationRequestRef.current;
     setCheckingProvider(provider);
     try {
       await authApi.checkHealth();
-      navigateToSocialAuth(authApi.getLoginUrl(provider));
+      navigateToSocialAuth(authApi.getLoginUrl(provider), requestId);
     } catch {
+      if (socialNavigationRequestRef.current !== requestId) return;
       setCheckingProvider(null);
       showToast("로그인 서버에 연결하지 못했어요. 잠시 후 다시 시도해 주세요.", "ERROR");
     }
@@ -121,9 +143,8 @@ export function UserPanel({
       await authApi.logout();
       queryClient.clear();
       clearUser();
-      closePanel();
       showToast("로그아웃했어요.", "INFO");
-      router.replace("/");
+      closePanel(() => router.replace("/"));
     } catch (error) {
       showToast(error instanceof Error ? error.message : "로그아웃하지 못했어요.", "ERROR");
     }
@@ -152,6 +173,7 @@ export function UserPanel({
   const handleSocialToggle = async (provider: SocialProvider) => {
     const memberAccount = account.data;
     if (!memberAccount) return;
+    const requestId = ++socialNavigationRequestRef.current;
     const linked = memberAccount.connectedProviders.includes(provider);
     if (linked && memberAccount.connectedProviders.length === 1) {
       showToast("로그인 수단을 하나 이상 유지해야 해요. 다른 소셜 계정을 연동한 뒤 해제해 주세요.", "INFO");
@@ -165,12 +187,13 @@ export function UserPanel({
         showToast(`${providerLabel[provider]} 계정 연동을 해제했어요.`, "SUCCESS");
       } else {
         const { authorizationUrl } = await authApi.linkSocial(provider);
-        navigateToSocialAuth(resolveApiUrl(authorizationUrl));
+        navigateToSocialAuth(resolveApiUrl(authorizationUrl), requestId);
       }
     } catch (error) {
+      if (socialNavigationRequestRef.current !== requestId) return;
       showToast(error instanceof Error ? error.message : `소셜 계정 ${linked ? "연동을 해제" : "연동을 시작"}하지 못했어요.`, "ERROR");
     } finally {
-      setCheckingProvider(null);
+      if (socialNavigationRequestRef.current === requestId) setCheckingProvider(null);
     }
   };
 
@@ -193,9 +216,8 @@ export function UserPanel({
       await authApi.withdraw();
       queryClient.clear();
       clearUser();
-      closePanel();
       showToast("회원 탈퇴가 완료됐어요.", "SUCCESS");
-      router.replace("/");
+      closePanel(() => router.replace("/"));
     } catch (error) {
       showToast(error instanceof Error ? error.message : "회원 탈퇴를 완료하지 못했어요.", "ERROR");
     } finally {
@@ -214,14 +236,14 @@ export function UserPanel({
         <div className="mb-4 grid grid-cols-[42px_1fr_42px] items-center">
           {isSubView ? <button type="button" onClick={() => setView("MAIN")} className="header-back-button" aria-label="설정으로 돌아가기"><ArrowLeft size={18} /></button> : <span />}
           <h2 id="user-panel-title" className="text-center text-xl font-extrabold">{isAccountView ? "계정 정보" : isFeedbackView ? "서비스 피드백" : member ? "설정" : "로그인"}</h2>
-          <button type="button" onClick={closePanel} className="icon-button" aria-label="닫기"><X size={20} /></button>
+          <button type="button" onClick={() => closePanel()} className="icon-button" aria-label="닫기"><X size={20} /></button>
         </div>
 
         {isAccountView ? (
           <div className="space-y-2.5">
             <section className="overflow-hidden rounded-[20px] border-2 border-[#d2e3ec]">
               {account.isLoading ? <div className="space-y-4 p-4"><div className="skeleton h-10 rounded-xl" /><div className="skeleton h-10 rounded-xl" /></div> : <>
-                <div className="flex items-center gap-3 border-b-2 border-[#edf2f5] px-4 py-4">
+                <div className="flex items-center gap-3 border-b-2 border-[#d2e3ec] px-4 py-4">
                   <UserRound size={18} className="shrink-0 text-[#718594]" />
                   <div className="min-w-0 flex-1"><p className="text-xs font-bold text-[#718594]">이름</p><p className="mt-1 truncate text-sm font-extrabold">{memberAccount?.name || "정보 없음"}</p></div>
                   <button type="button" onClick={() => setIsNameEditOpen(true)} className="flex w-fit shrink-0 items-center gap-1 text-[11px] font-extrabold text-[#526a7a] transition-colors hover:text-[#238fc9]"><Pencil size={13} /> 수정</button>
@@ -234,12 +256,12 @@ export function UserPanel({
             </section>
 
             <div className="overflow-hidden rounded-[20px] border-2 border-[#d2e3ec]">
-              <div className="flex items-center gap-2 border-b-2 border-[#edf2f5] px-4 py-3 text-sm font-extrabold"><Link2 size={17} className="text-[#718594]" /> 소셜 연동</div>
+              <div className="flex items-center gap-2 border-b-2 border-[#d2e3ec] px-4 py-3 text-sm font-extrabold"><Link2 size={17} className="text-[#718594]" /> 소셜 연동</div>
               {socialProviders.map((provider, index) => {
                 const isCurrent = memberAccount?.currentProvider === provider;
                 const isLinked = memberAccount?.connectedProviders.includes(provider) ?? false;
                 const isLastLinked = isLinked && memberAccount?.connectedProviders.length === 1;
-                return <div key={provider} className={`flex items-center gap-3 px-4 py-3 ${index < socialProviders.length - 1 ? "border-b-2 border-[#edf2f5]" : ""}`}>
+                return <div key={provider} className={`flex items-center gap-3 px-4 py-3 ${index < socialProviders.length - 1 ? "border-b-2 border-[#d2e3ec]" : ""}`}>
                   <SocialIcon provider={provider} />
                   <div><p className="text-sm font-extrabold">{providerLabel[provider]}</p><p className={`mt-0.5 text-[11px] font-extrabold ${isCurrent ? "text-[#238fc9]" : "text-[#718594]"}`}>{isCurrent ? "현재 로그인" : isLinked ? "연동됨" : "연동 안 됨"}</p></div>
                   <button type="button" role="switch" disabled={!memberAccount || checkingProvider !== null} aria-checked={isLinked} aria-label={isLastLinked ? `${providerLabel[provider]} 계정은 유일한 로그인 수단이라 연동을 해제할 수 없음` : `${providerLabel[provider]} 계정 연동`} onClick={() => void handleSocialToggle(provider)} className={`ml-auto flex h-7 w-12 items-center rounded-full p-0.5 transition-colors ${isLinked ? "bg-[#45ace4]" : "bg-[#cbd6dc]"} disabled:cursor-wait disabled:opacity-60`}><span className={`size-6 rounded-full bg-white shadow-sm transition-transform ${isLinked ? "translate-x-5" : "translate-x-0"}`} /></button>
@@ -260,11 +282,11 @@ export function UserPanel({
           </div>
         ) : member ? <>
           <div className="overflow-hidden rounded-[20px] border-2 border-[#d2e3ec]">
-            <button type="button" onClick={() => setView("ACCOUNT")} className="flex w-full items-center gap-3 border-b-2 border-[#edf2f5] px-4 py-4 text-left text-sm font-extrabold"><UserRound size={18} className="text-[#718594]" /> 계정 정보 <ChevronRight size={17} className="ml-auto text-[#9aabb5]" /></button>
+            <button type="button" onClick={() => setView("ACCOUNT")} className="flex w-full items-center gap-3 border-b-2 border-[#d2e3ec] px-4 py-4 text-left text-sm font-extrabold"><UserRound size={18} className="text-[#718594]" /> 계정 정보 <ChevronRight size={17} className="ml-auto text-[#9aabb5]" /></button>
             <button type="button" onClick={() => setView("FEEDBACK")} className="flex w-full items-center gap-3 px-4 py-4 text-left text-sm font-extrabold"><MessageSquareText size={18} className="text-[#718594]" /> 서비스 피드백 <ChevronRight size={17} className="ml-auto text-[#9aabb5]" /></button>
           </div>
           <div className="mt-3 overflow-hidden rounded-[20px] border-2 border-[#d2e3ec]">
-            <button type="button" onClick={() => openPolicy("PRIVACY")} className="flex w-full items-center gap-3 border-b-2 border-[#edf2f5] px-4 py-4 text-left text-sm font-extrabold"><ShieldCheck size={18} className="text-[#718594]" /> 개인정보처리방침 <ChevronRight size={17} className="ml-auto text-[#9aabb5]" /></button>
+            <button type="button" onClick={() => openPolicy("PRIVACY")} className="flex w-full items-center gap-3 border-b-2 border-[#d2e3ec] px-4 py-4 text-left text-sm font-extrabold"><ShieldCheck size={18} className="text-[#718594]" /> 개인정보처리방침 <ChevronRight size={17} className="ml-auto text-[#9aabb5]" /></button>
             <button type="button" onClick={() => openPolicy("TERMS")} className="flex w-full items-center gap-3 px-4 py-4 text-left text-sm font-extrabold"><FileText size={18} className="text-[#718594]" /> 서비스 이용약관 <ChevronRight size={17} className="ml-auto text-[#9aabb5]" /></button>
           </div>
           <button type="button" onClick={() => void handleLogout()} className="mt-3 flex w-full items-center gap-3 rounded-[20px] border-2 border-[#d2e3ec] px-4 py-4 text-left text-sm font-extrabold"><LogOut size={18} className="text-[#718594]" /> 로그아웃</button>
@@ -275,8 +297,8 @@ export function UserPanel({
             <button type="button" disabled={checkingProvider !== null} onClick={() => void openServerLogin("KAKAO")} className="flex size-11 items-center justify-center rounded-full shadow-sm transition hover:-translate-y-0.5 disabled:cursor-wait disabled:opacity-60" aria-label="카카오 로그인"><SocialIcon provider="KAKAO" className="size-11" /></button>
           </div>
           <div className="mt-3 overflow-hidden rounded-[20px] border-2 border-[#d2e3ec]">
-            <button type="button" onClick={() => setView("FEEDBACK")} className="flex w-full items-center gap-3 border-b-2 border-[#edf2f5] px-4 py-4 text-left text-sm font-extrabold"><MessageSquareText size={18} className="text-[#718594]" /> 서비스 피드백 <ChevronRight size={17} className="ml-auto text-[#9aabb5]" /></button>
-            <button type="button" onClick={() => openPolicy("PRIVACY")} className="flex w-full items-center gap-3 border-b-2 border-[#edf2f5] px-4 py-4 text-left text-sm font-extrabold"><ShieldCheck size={18} className="text-[#718594]" /> 개인정보처리방침 <ChevronRight size={17} className="ml-auto text-[#9aabb5]" /></button>
+            <button type="button" onClick={() => setView("FEEDBACK")} className="flex w-full items-center gap-3 border-b-2 border-[#d2e3ec] px-4 py-4 text-left text-sm font-extrabold"><MessageSquareText size={18} className="text-[#718594]" /> 서비스 피드백 <ChevronRight size={17} className="ml-auto text-[#9aabb5]" /></button>
+            <button type="button" onClick={() => openPolicy("PRIVACY")} className="flex w-full items-center gap-3 border-b-2 border-[#d2e3ec] px-4 py-4 text-left text-sm font-extrabold"><ShieldCheck size={18} className="text-[#718594]" /> 개인정보처리방침 <ChevronRight size={17} className="ml-auto text-[#9aabb5]" /></button>
             <button type="button" onClick={() => openPolicy("TERMS")} className="flex w-full items-center gap-3 px-4 py-4 text-left text-sm font-extrabold"><FileText size={18} className="text-[#718594]" /> 서비스 이용약관 <ChevronRight size={17} className="ml-auto text-[#9aabb5]" /></button>
           </div>
           <p className="mt-4 text-center text-[10px] font-medium text-[#8ba0ae]">© 2026 날씨로그. All rights reserved.</p>
