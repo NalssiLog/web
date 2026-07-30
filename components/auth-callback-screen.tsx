@@ -56,6 +56,7 @@ export function AuthCallbackScreen() {
         const code = searchParams.get("code");
         if (result === "LINK_SUCCESS") {
           authLogger.info("authentication_completed", { result });
+          queryClient.removeQueries({ queryKey: ["members", "me"], exact: true });
           markAccountPanelReturn();
           showToast("소셜 계정을 연동했어요.", "SUCCESS");
           router.replace("/mypage");

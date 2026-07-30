@@ -12,7 +12,8 @@ import { weatherApi } from "@/lib/api";
 import { ApiError } from "@/lib/api/http-client";
 import { PRECIPITATION_OPTIONS, SUNLIGHT_OPTIONS, TEMPERATURE_OPTIONS, formatThanksCount, getLocationName, statusLabel } from "@/lib/constants";
 import { formatReportDateTime } from "@/lib/date";
-import type { ReportPage, ThanksState, WeatherReport } from "@/lib/types";
+import type { ReportPage, ThanksState, WeatherReport, WeatherStatus } from "@/lib/types";
+import { getWeatherStatusTone } from "@/lib/weather-status-tone";
 import { useToastStore } from "@/store/toast-store";
 import { useAuthStore } from "@/store/auth-store";
 import { useLocationStore } from "@/store/location-store";
@@ -184,9 +185,9 @@ export function ReportDetail() {
 
       <div className="px-5 pt-6">
         <div className="grid grid-cols-3 gap-2">
-          <StatusPill icon={<Thermometer size={18} />} value={statusLabel(TEMPERATURE_OPTIONS, item.temperature)} />
-          <StatusPill icon={<CloudRain size={18} />} value={statusLabel(PRECIPITATION_OPTIONS, item.precipitation)} />
-          <StatusPill icon={<Sun size={18} />} value={statusLabel(SUNLIGHT_OPTIONS, item.sunlight)} />
+          <StatusPill status={item.temperature} icon={<Thermometer size={18} />} value={statusLabel(TEMPERATURE_OPTIONS, item.temperature)} />
+          <StatusPill status={item.precipitation} icon={<CloudRain size={18} />} value={statusLabel(PRECIPITATION_OPTIONS, item.precipitation)} />
+          <StatusPill status={item.sunlight} icon={<Sun size={18} />} value={statusLabel(SUNLIGHT_OPTIONS, item.sunlight)} />
         </div>
         <p className="mt-3 whitespace-pre-wrap rounded-[17px] border-2 border-[#d2e3ec] p-4 text-[15px] font-medium leading-6 text-[#29495c]">{item.content}</p>
         {canDelete && <div className="mt-3 flex justify-end"><button type="button" disabled={deleteReport.isPending} onClick={() => setIsDeleteModalOpen(true)} className="flex items-center gap-1.5 rounded-xl px-3 py-2 text-xs font-extrabold text-[#b56868] transition hover:bg-[#fff5f3] hover:text-[#c95e5e] disabled:opacity-50"><Trash2 size={15} /> 제보 삭제</button></div>}
@@ -200,8 +201,8 @@ function DetailHeader({ onBack, title, onTitleClick }: { onBack: () => void; tit
   return <div className="safe-top spacious-page-header grid grid-cols-[36px_minmax(0,1fr)_36px] items-center pb-2"><button type="button" onClick={onBack} className="header-back-button" aria-label="뒤로 가기"><ArrowLeft size={18} /></button>{title ? onTitleClick ? <button type="button" onClick={onTitleClick} className="w-fit max-w-full justify-self-center break-keep text-center text-base leading-5 transition-colors hover:text-[#268fc7]" aria-label={`${title} 날씨 홈으로 이동`}><span className="font-extrabold">{title}</span></button> : <p className="break-keep px-2 text-center text-base font-extrabold leading-5">{title}</p> : <span className="skeleton mx-auto h-5 w-36 rounded" aria-label="지역명 불러오는 중" />}<span /></div>;
 }
 
-function StatusPill({ icon, value }: { icon: ReactNode; value: string }) {
-  return <div className="flex items-center justify-center gap-1.5 rounded-[17px] border-2 border-[#d2e3ec] px-2 py-3"><span className="text-[#45ace4]" aria-hidden="true">{icon}</span><span className="truncate text-xs font-extrabold text-[#386177]">{value}</span></div>;
+function StatusPill({ status, icon, value }: { status: WeatherStatus; icon: ReactNode; value: string }) {
+  return <div className={`flex items-center justify-center gap-1.5 rounded-[17px] border-2 px-2 py-3 ${getWeatherStatusTone(status).detail}`}><span aria-hidden="true">{icon}</span><span className="truncate text-xs font-extrabold">{value}</span></div>;
 }
 
 function PhotoCarousel({ images, author }: { images: string[]; author: string }) {

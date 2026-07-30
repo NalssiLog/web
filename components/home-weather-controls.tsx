@@ -58,7 +58,7 @@ export function HomeWeatherControls({
         className="flex h-10 shrink-0 items-center gap-1.5 rounded-2xl px-2 text-xs font-bold text-[#718594] transition-colors hover:text-[#268fc7] disabled:cursor-wait disabled:opacity-50"
         aria-label={`${updatedAtLabel}, 날씨 통계와 피드 새로고침`}
       >
-        <RotateCw size={14} strokeWidth={2.3} className={isRefreshing ? "animate-spin [animation-duration:2.4s]" : ""} />
+        <RotateCw size={14} strokeWidth={2.3} className={isRefreshing ? "animate-spin [animation-duration:1.1s]" : ""} />
         <span>{updatedAtLabel}</span>
       </button>
     </section>

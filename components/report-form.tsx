@@ -18,7 +18,8 @@ import { weatherApi } from "@/lib/api";
 import { PRECIPITATION_OPTIONS, SUGGESTED_MESSAGES, SUNLIGHT_OPTIONS, TEMPERATURE_OPTIONS, getLocationName } from "@/lib/constants";
 import { normalizeSelectedImage, optimizeReportImage } from "@/lib/image";
 import { getTextLength, truncateText } from "@/lib/text";
-import type { CreateReportInput, Location, PrecipitationStatus, ReportUploadProgress, SunlightStatus, TemperatureStatus } from "@/lib/types";
+import type { CreateReportInput, Location, PrecipitationStatus, ReportUploadProgress, SunlightStatus, TemperatureStatus, WeatherStatus } from "@/lib/types";
+import { getWeatherStatusTone } from "@/lib/weather-status-tone";
 import { useToastStore } from "@/store/toast-store";
 
 const ACCEPTED_TYPES = ["image/jpeg", "image/png", "image/webp"];
@@ -82,16 +83,16 @@ function clearReportDraft() {
   }
 }
 
-interface StatusOption<T extends string> { value: T; label: string }
+interface StatusOption<T extends WeatherStatus> { value: T; label: string }
 
-function StatusField<T extends string>({ title, options, value, onChange }: { title: string; options: ReadonlyArray<StatusOption<T>>; value?: T; onChange: (value?: T) => void }) {
+function StatusField<T extends WeatherStatus>({ title, options, value, onChange }: { title: string; options: ReadonlyArray<StatusOption<T>>; value?: T; onChange: (value?: T) => void }) {
   return (
     <fieldset className="mt-6">
       <legend className="text-[17px] font-extrabold">{title} <span className="text-[#45ace4]">*</span></legend>
       <div className="mt-3 grid grid-cols-3 gap-2">
         {options.map((option) => {
           const selected = value === option.value;
-          return <button key={option.value} type="button" onClick={() => onChange(selected ? undefined : option.value)} className={`flex min-h-14 items-center justify-center rounded-[18px] border-2 p-2 transition ${selected ? "border-[#45ace4] bg-[#eaf7ff] text-[#268fc7] ring-2 ring-[#45ace4]/10" : "border-[#d2e3ec] text-[#526a7a]"}`} aria-pressed={selected}>
+          return <button key={option.value} type="button" onClick={() => onChange(selected ? undefined : option.value)} className={`flex min-h-14 items-center justify-center rounded-[18px] border-2 p-2 transition ${selected ? getWeatherStatusTone(option.value).selected : "border-[#d2e3ec] text-[#526a7a]"}`} aria-pressed={selected}>
             <span className="text-[13px] font-bold">{option.label}</span>
           </button>;
         })}

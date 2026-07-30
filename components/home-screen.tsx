@@ -2,7 +2,7 @@
 
 import { useInfiniteQuery, useQuery } from "@tanstack/react-query";
 import { CloudOff, RefreshCw } from "lucide-react";
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { AppHeader } from "@/components/app-header";
 import { EmptyState } from "@/components/empty-state";
 import { ErrorState } from "@/components/error-state";
@@ -20,6 +20,7 @@ export function HomeScreen() {
   const { location, setLocation, isDetecting, detectionError, needsManualInput, setNeedsManualInput, detectLocation } = useCurrentLocation({ refreshOnHomeResume: true });
   const showToast = useToastStore((state) => state.showToast);
   const loadMoreRef = useRef<HTMLDivElement>(null);
+  const [isManualRefreshAnimating, setIsManualRefreshAnimating] = useState(false);
   const locationLabel = location ? getLocationName(location, "short") : "";
   const locationKey = location?.id ?? locationLabel;
   const summary = useQuery({ queryKey: ["weather-summary", locationKey], queryFn: () => weatherApi.getSummary(location!), enabled: !!location, refetchInterval: 10_000, refetchIntervalInBackground: false });
@@ -48,7 +49,16 @@ export function HomeScreen() {
   const isEmptyFeed = Boolean(reports.data && items.length === 0);
   const showFeedEndMessage = Boolean(reports.data && !reports.hasNextPage && items.length > 0);
   const refreshWeather = async () => {
-    await Promise.all([summary.refetch(), reports.refetch()]);
+    if (isManualRefreshAnimating) return;
+    setIsManualRefreshAnimating(true);
+    const minimumAnimation = new Promise<void>((resolve) => {
+      window.setTimeout(resolve, 650);
+    });
+    try {
+      await Promise.all([summary.refetch(), reports.refetch(), minimumAnimation]);
+    } finally {
+      setIsManualRefreshAnimating(false);
+    }
   };
   const hasSummaryData = Boolean(summary.data);
   const hasReportData = Boolean(reports.data);
@@ -64,12 +74,12 @@ export function HomeScreen() {
         location={locationLabel}
         isDetecting={isDetecting && !needsManualInput}
         updatedAt={summary.dataUpdatedAt}
-        isRefreshing={summary.isFetching || reports.isRefetching}
+        isRefreshing={summary.isFetching || reports.isRefetching || isManualRefreshAnimating}
         canRefresh={Boolean(location)}
         onLocationClick={() => setNeedsManualInput(true)}
         onRefresh={() => void refreshWeather()}
       />
-      {hasWeatherData && hasWeatherError && <ConnectionNotice onRetry={refreshWeather} isRetrying={summary.isFetching || reports.isFetching} />}
+      {hasWeatherData && hasWeatherError && <ConnectionNotice onRetry={refreshWeather} isRetrying={summary.isFetching || reports.isFetching || isManualRefreshAnimating} />}
       {showLocationError ? <ErrorState message="현재 동네를 불러오지 못했어요." transparent /> : showFullWeatherError ? <ErrorState onRetry={refreshWeather} transparent /> : <>
         {summary.data
           ? <WeatherSummary summary={summary.data} />

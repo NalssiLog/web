@@ -1,6 +1,7 @@
 export type TemperatureStatus = "COLD" | "FRESH" | "HOT";
 export type PrecipitationStatus = "NONE" | "LIGHT" | "HEAVY";
 export type SunlightStatus = "LOW" | "MODERATE" | "STRONG";
+export type WeatherStatus = TemperatureStatus | PrecipitationStatus | SunlightStatus;
 
 export type WeatherAuthor =
   | { type: "ANONYMOUS"; nickname?: string }
