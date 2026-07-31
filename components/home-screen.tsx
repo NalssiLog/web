@@ -1,7 +1,6 @@
 "use client";
 
 import { useInfiniteQuery, useQuery } from "@tanstack/react-query";
-import { CloudOff, RefreshCw } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { AppHeader } from "@/components/app-header";
 import { EmptyState } from "@/components/empty-state";
@@ -79,8 +78,7 @@ export function HomeScreen() {
         onLocationClick={() => setNeedsManualInput(true)}
         onRefresh={() => void refreshWeather()}
       />
-      {hasWeatherData && hasWeatherError && <ConnectionNotice onRetry={refreshWeather} isRetrying={summary.isFetching || reports.isFetching || isManualRefreshAnimating} />}
-      {showLocationError ? <ErrorState message="현재 동네를 불러오지 못했어요." transparent /> : showFullWeatherError ? <ErrorState onRetry={refreshWeather} transparent /> : <>
+      {showLocationError ? <ErrorState message="현재 동네를 불러오지 못했어요." transparent /> : showFullWeatherError ? <div className="flex min-h-64 flex-col items-center justify-center text-center"><p className="font-extrabold">서버 오류입니다</p><p className="mt-1 text-sm text-[#718594]">관리자에게 문의해 주세요</p></div> : <>
         {summary.data
           ? <WeatherSummary summary={summary.data} />
           : isInitialWeatherLoading || (!summary.isError && summary.isPending)
@@ -98,18 +96,6 @@ export function HomeScreen() {
         {reports.isFetchingNextPage ? "다음 날씨를 불러오는 중…" : showFeedEndMessage ? "모든 날씨를 확인했어요" : null}
       </div>
       <LocationPicker open={needsManualInput} current={location} isDetecting={isDetecting} detectionError={detectionError} required={false} onClose={() => setNeedsManualInput(false)} onDetect={detectLocation} onSelect={(next) => { setLocation(next); setNeedsManualInput(false); showToast(`${getLocationName(next, "short")} 날씨로 이동했어요.`, "INFO"); }} />
-    </div>
-  );
-}
-
-function ConnectionNotice({ onRetry, isRetrying }: { onRetry: () => void; isRetrying: boolean }) {
-  return (
-    <div className="mb-4 flex items-center gap-3 rounded-[18px] border-2 border-[#f0dfc8] bg-[#fff9ef] px-4 py-3 text-[#806846]" role="status">
-      <CloudOff size={18} className="shrink-0" />
-      <p className="min-w-0 flex-1 text-xs font-bold leading-5">서버 연결이 원활하지 않아 최근 데이터를 표시하고 있어요.</p>
-      <button type="button" onClick={onRetry} disabled={isRetrying} className="flex size-8 shrink-0 items-center justify-center rounded-xl border-2 border-[#d2e3ec] transition-colors hover:text-[#268fc7] disabled:cursor-wait disabled:opacity-50" aria-label="날씨 다시 불러오기">
-        <RefreshCw size={15} className={isRetrying ? "animate-spin" : ""} />
-      </button>
     </div>
   );
 }
