@@ -8,8 +8,13 @@ import type { Location } from "@/lib/types";
 interface LocationState {
   location: Location | null;
   hasAttemptedDetection: boolean;
+  isDetecting: boolean;
+  detectionError: string;
   setLocation: (location: Location) => void;
   markDetectionAttempted: () => void;
+  startDetection: () => void;
+  stopDetection: () => void;
+  finishDetection: (error?: string) => void;
 }
 
 export const useLocationStore = create<LocationState>()(
@@ -17,8 +22,13 @@ export const useLocationStore = create<LocationState>()(
     (set) => ({
       location: null,
       hasAttemptedDetection: false,
+      isDetecting: false,
+      detectionError: "",
       setLocation: (location) => set({ location }),
       markDetectionAttempted: () => set({ hasAttemptedDetection: true }),
+      startDetection: () => set({ isDetecting: true, detectionError: "" }),
+      stopDetection: () => set({ isDetecting: false }),
+      finishDetection: (error = "") => set({ isDetecting: false, detectionError: error }),
     }),
     {
       name: "nalssilog-location",

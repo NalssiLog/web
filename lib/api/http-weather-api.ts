@@ -97,7 +97,7 @@ function normalizeReport(report: BackendReport): WeatherReport {
 
 async function resolveBackendLocation(location: Location) {
   if (location.id && /^\d+$/.test(location.id)) return location;
-  const candidates = await locationApi.search(location.fullName ?? location.label);
+  const { items: candidates } = await locationApi.search(location.fullName ?? location.label);
   return candidates.find((candidate) =>
     candidate.fullName === location.fullName || candidate.label === location.label,
   ) ?? candidates[0] ?? location;

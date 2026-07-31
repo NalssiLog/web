@@ -1,18 +1,19 @@
 "use client";
 
 import { useMutation, useQuery, useQueryClient, type InfiniteData, type QueryKey } from "@tanstack/react-query";
-import { ArrowLeft, ChevronLeft, ChevronRight, CloudRain, Heart, Sun, Thermometer, Trash2, UserRound } from "lucide-react";
+import { ArrowLeft, CloudRain, Heart, Sun, Thermometer, Trash2, UserRound } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
-import { useRef, useState, type ReactNode } from "react";
+import { useState, type ReactNode, type UIEvent } from "react";
 import { ErrorState } from "@/components/error-state";
-import { ReportDeleteConfirmModal } from "@/components/report-delete-confirm-modal";
+import { ReportDeleteConfirmModal, type ModalDismiss } from "@/components/report-delete-confirm-modal";
 import { weatherApi } from "@/lib/api";
 import { ApiError } from "@/lib/api/http-client";
 import { PRECIPITATION_OPTIONS, SUNLIGHT_OPTIONS, TEMPERATURE_OPTIONS, formatThanksCount, getLocationName, statusLabel } from "@/lib/constants";
 import { formatReportDateTime } from "@/lib/date";
-import type { ReportPage, ThanksState, WeatherReport } from "@/lib/types";
+import type { ReportPage, ThanksState, WeatherReport, WeatherStatus } from "@/lib/types";
+import { getWeatherStatusTone } from "@/lib/weather-status-tone";
 import { useToastStore } from "@/store/toast-store";
 import { useAuthStore } from "@/store/auth-store";
 import { useLocationStore } from "@/store/location-store";
@@ -119,21 +120,22 @@ export function ReportDetail() {
       );
     },
   });
-  const deleteReport = useMutation({
+  const deleteReport = useMutation<void, Error, ModalDismiss>({
     mutationFn: () => weatherApi.deleteReport(id),
-    onSuccess: () => {
+    onSuccess: (_result, dismissModal) => {
       queryClient.setQueriesData<InfiniteData<ReportPage>>(
         { predicate: (query) => isReportListQuery(query.queryKey) },
         (data) => removeReportFromPages(data, id),
       );
       void queryClient.invalidateQueries({ queryKey: ["weather-summary"] });
       void queryClient.invalidateQueries({ queryKey: ["weather-reports"] });
-      setIsDeleteModalOpen(false);
       showToast("날씨 제보를 삭제했어요.", "SUCCESS");
-      router.back();
-      window.setTimeout(() => {
-        queryClient.removeQueries({ queryKey: ["weather-report", id], exact: true });
-      }, 100);
+      dismissModal(() => {
+        router.back();
+        window.setTimeout(() => {
+          queryClient.removeQueries({ queryKey: ["weather-report", id], exact: true });
+        }, 100);
+      });
     },
     onError: (error) => {
       if (error instanceof ApiError && error.code === "REPORT_NOT_FOUND") {
@@ -183,14 +185,14 @@ export function ReportDetail() {
 
       <div className="px-5 pt-6">
         <div className="grid grid-cols-3 gap-2">
-          <StatusPill icon={<Thermometer size={18} />} value={statusLabel(TEMPERATURE_OPTIONS, item.temperature)} />
-          <StatusPill icon={<CloudRain size={18} />} value={statusLabel(PRECIPITATION_OPTIONS, item.precipitation)} />
-          <StatusPill icon={<Sun size={18} />} value={statusLabel(SUNLIGHT_OPTIONS, item.sunlight)} />
+          <StatusPill status={item.temperature} icon={<Thermometer size={18} />} value={statusLabel(TEMPERATURE_OPTIONS, item.temperature)} />
+          <StatusPill status={item.precipitation} icon={<CloudRain size={18} />} value={statusLabel(PRECIPITATION_OPTIONS, item.precipitation)} />
+          <StatusPill status={item.sunlight} icon={<Sun size={18} />} value={statusLabel(SUNLIGHT_OPTIONS, item.sunlight)} />
         </div>
         <p className="mt-3 whitespace-pre-wrap rounded-[17px] border-2 border-[#d2e3ec] p-4 text-[15px] font-medium leading-6 text-[#29495c]">{item.content}</p>
         {canDelete && <div className="mt-3 flex justify-end"><button type="button" disabled={deleteReport.isPending} onClick={() => setIsDeleteModalOpen(true)} className="flex items-center gap-1.5 rounded-xl px-3 py-2 text-xs font-extrabold text-[#b56868] transition hover:bg-[#fff5f3] hover:text-[#c95e5e] disabled:opacity-50"><Trash2 size={15} /> 제보 삭제</button></div>}
       </div>
-      {isDeleteModalOpen && <ReportDeleteConfirmModal isSubmitting={deleteReport.isPending} onClose={() => setIsDeleteModalOpen(false)} onConfirm={() => deleteReport.mutate()} />}
+      {isDeleteModalOpen && <ReportDeleteConfirmModal isSubmitting={deleteReport.isPending} onClose={() => setIsDeleteModalOpen(false)} onConfirm={(dismissModal) => deleteReport.mutate(dismissModal)} />}
     </article>
   );
 }
@@ -199,46 +201,37 @@ function DetailHeader({ onBack, title, onTitleClick }: { onBack: () => void; tit
   return <div className="safe-top spacious-page-header grid grid-cols-[36px_minmax(0,1fr)_36px] items-center pb-2"><button type="button" onClick={onBack} className="header-back-button" aria-label="뒤로 가기"><ArrowLeft size={18} /></button>{title ? onTitleClick ? <button type="button" onClick={onTitleClick} className="w-fit max-w-full justify-self-center break-keep text-center text-base leading-5 transition-colors hover:text-[#268fc7]" aria-label={`${title} 날씨 홈으로 이동`}><span className="font-extrabold">{title}</span></button> : <p className="break-keep px-2 text-center text-base font-extrabold leading-5">{title}</p> : <span className="skeleton mx-auto h-5 w-36 rounded" aria-label="지역명 불러오는 중" />}<span /></div>;
 }
 
-function StatusPill({ icon, value }: { icon: ReactNode; value: string }) {
-  return <div className="flex items-center justify-center gap-1.5 rounded-[17px] border-2 border-[#d2e3ec] px-2 py-3"><span className="text-[#45ace4]" aria-hidden="true">{icon}</span><span className="truncate text-xs font-extrabold text-[#386177]">{value}</span></div>;
+function StatusPill({ status, icon, value }: { status: WeatherStatus; icon: ReactNode; value: string }) {
+  return <div className={`flex items-center justify-center gap-1.5 rounded-[17px] border-2 px-2 py-3 ${getWeatherStatusTone(status).detail}`}><span aria-hidden="true">{icon}</span><span className="truncate text-xs font-extrabold">{value}</span></div>;
 }
 
 function PhotoCarousel({ images, author }: { images: string[]; author: string }) {
-  const scrollRef = useRef<HTMLDivElement>(null);
-  const scrollTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [currentIndex, setCurrentIndex] = useState(0);
   const hasMultipleImages = images.length > 1;
 
-  const updateIndexAfterScroll = () => {
-    if (scrollTimerRef.current) clearTimeout(scrollTimerRef.current);
-    scrollTimerRef.current = setTimeout(() => {
-      const scroller = scrollRef.current;
-      if (!scroller || scroller.clientWidth === 0) return;
-      setCurrentIndex(Math.round(scroller.scrollLeft / scroller.clientWidth));
-    }, 120);
-  };
-
-  const moveTo = (index: number) => {
-    const nextIndex = Math.max(0, Math.min(index, images.length - 1));
-    const scroller = scrollRef.current;
-    if (!scroller) return;
-    scroller.scrollTo({ left: scroller.clientWidth * nextIndex, behavior: "smooth" });
-    setCurrentIndex(nextIndex);
+  const updateIndexDuringScroll = (event: UIEvent<HTMLDivElement>) => {
+    const scroller = event.currentTarget;
+    if (scroller.clientWidth === 0) return;
+    const nextIndex = Math.max(
+      0,
+      Math.min(images.length - 1, Math.round(scroller.scrollLeft / scroller.clientWidth)),
+    );
+    setCurrentIndex((previousIndex) => previousIndex === nextIndex ? previousIndex : nextIndex);
   };
 
   return (
     <div className="relative mx-8 overflow-hidden rounded-[24px] border border-[#d2e3ec]">
-      <div ref={scrollRef} onScroll={updateIndexAfterScroll} className="flex snap-x snap-mandatory overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+      <div
+        onScroll={updateIndexDuringScroll}
+        className="flex snap-x snap-mandatory overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+        role="region"
+        aria-roledescription="carousel"
+        aria-label={`${author}의 날씨 사진`}
+        tabIndex={hasMultipleImages ? 0 : undefined}
+      >
         {images.map((image, index) => <div key={`${image}-${index}`} className="relative aspect-square w-full shrink-0 snap-center"><Image src={image} alt={`${author}의 날씨 사진 ${index + 1}`} fill unoptimized={/^(https?:|blob:|data:)/.test(image)} priority={index === 0} sizes="(max-width: 480px) calc(100vw - 64px), 416px" className="object-cover" /></div>)}
       </div>
-      {hasMultipleImages && <>
-        <span className="absolute right-4 top-4 rounded-full bg-[#173144]/65 px-2.5 py-1 text-xs font-bold text-white">{currentIndex + 1} / {images.length}</span>
-        {currentIndex > 0 && <button type="button" onClick={() => moveTo(currentIndex - 1)} className="absolute left-3 top-1/2 flex size-9 -translate-y-1/2 items-center justify-center rounded-full bg-white/85 text-[#29495c] shadow-md backdrop-blur-sm" aria-label="이전 사진"><ChevronLeft size={21} /></button>}
-        {currentIndex < images.length - 1 && <button type="button" onClick={() => moveTo(currentIndex + 1)} className="absolute right-3 top-1/2 flex size-9 -translate-y-1/2 items-center justify-center rounded-full bg-white/85 text-[#29495c] shadow-md backdrop-blur-sm" aria-label="다음 사진"><ChevronRight size={21} /></button>}
-        <div className="absolute bottom-3 left-1/2 flex -translate-x-1/2 gap-1.5" aria-label={`${images.length}장 중 ${currentIndex + 1}번째 사진`}>
-          {images.map((_, index) => <button key={index} type="button" onClick={() => moveTo(index)} className={`h-1.5 rounded-full shadow-sm transition-all ${index === currentIndex ? "w-5 bg-white" : "w-1.5 bg-white/60"}`} aria-label={`${index + 1}번째 사진 보기`} />)}
-        </div>
-      </>}
+      {hasMultipleImages && <span className="absolute right-4 top-4 rounded-full bg-[#173144]/65 px-2.5 py-1 text-xs font-bold text-white" aria-live="polite">{currentIndex + 1} / {images.length}</span>}
     </div>
   );
 }

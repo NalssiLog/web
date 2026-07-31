@@ -2,6 +2,7 @@
 
 import { X } from "lucide-react";
 import { useState } from "react";
+import { useModalNavigation } from "@/hooks/use-modal-navigation";
 import { getTextLength } from "@/lib/text";
 
 export function NameEditModal({
@@ -19,6 +20,13 @@ export function NameEditModal({
   const nameLength = getTextLength(name);
   const isValid = getTextLength(normalizedName) > 0 && getTextLength(normalizedName) <= 30;
   const canSave = isValid && normalizedName !== currentName.trim() && !isSaving;
+  const closeModal = useModalNavigation({
+    open: true,
+    onBack: () => {
+      if (!isSaving) onClose();
+    },
+    onDismiss: onClose,
+  });
 
   const save = async () => {
     if (!canSave) return;
@@ -38,7 +46,7 @@ export function NameEditModal({
         <div className="grid grid-cols-[40px_1fr_40px] items-center">
           <span />
           <h3 id="name-modal-title" className="text-center text-lg font-extrabold">이름 변경</h3>
-          <button type="button" onClick={onClose} className="icon-button" aria-label="닫기"><X size={19} /></button>
+          <button type="button" onClick={() => closeModal()} className="icon-button" aria-label="닫기"><X size={19} /></button>
         </div>
 
         <div className="mt-5 rounded-[18px] border-2 border-[#d2e3ec] p-3.5">

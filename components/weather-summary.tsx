@@ -2,6 +2,7 @@ import { CloudRain, Sun, Thermometer } from "lucide-react";
 import type { ReactNode } from "react";
 import { PRECIPITATION_OPTIONS, SUNLIGHT_OPTIONS, TEMPERATURE_OPTIONS, statusLabel } from "@/lib/constants";
 import type { WeatherSummary as Summary } from "@/lib/types";
+import { getWeatherStatusTone } from "@/lib/weather-status-tone";
 
 export function WeatherSummary({ summary }: { summary: Summary }) {
   const temperature = summary.temperature;
@@ -10,9 +11,9 @@ export function WeatherSummary({ summary }: { summary: Summary }) {
   return (
     <section className="mb-3">
       <div className="grid grid-cols-3 gap-2">
-        <SummaryItem icon={<Thermometer size={17} />} label="체감온도" value={temperature ? statusLabel(TEMPERATURE_OPTIONS, temperature) : "제보 없음"} tone={temperature ? temperatureTone[temperature] : emptyTone} />
-        <SummaryItem icon={<CloudRain size={17} />} label="비" value={precipitation ? statusLabel(PRECIPITATION_OPTIONS, precipitation) : "제보 없음"} tone={precipitation ? precipitationTone[precipitation] : emptyTone} />
-        <SummaryItem icon={<Sun size={17} />} label="햇빛" value={sunlight ? statusLabel(SUNLIGHT_OPTIONS, sunlight) : "제보 없음"} tone={sunlight ? sunlightTone[sunlight] : emptyTone} />
+        <SummaryItem icon={<Thermometer size={17} />} label="체감온도" value={temperature ? statusLabel(TEMPERATURE_OPTIONS, temperature) : "제보 없음"} tone={temperature ? getWeatherStatusTone(temperature).badge : emptyTone} />
+        <SummaryItem icon={<CloudRain size={17} />} label="비" value={precipitation ? statusLabel(PRECIPITATION_OPTIONS, precipitation) : "제보 없음"} tone={precipitation ? getWeatherStatusTone(precipitation).badge : emptyTone} />
+        <SummaryItem icon={<Sun size={17} />} label="햇빛" value={sunlight ? statusLabel(SUNLIGHT_OPTIONS, sunlight) : "제보 없음"} tone={sunlight ? getWeatherStatusTone(sunlight).badge : emptyTone} />
       </div>
     </section>
   );
@@ -35,24 +36,6 @@ export function WeatherSummarySkeleton() {
     </section>
   );
 }
-
-const temperatureTone = {
-  COLD: "bg-[#e8f3ff] text-[#397bb5]",
-  FRESH: "bg-[#e4f7ee] text-[#318561]",
-  HOT: "bg-[#fff0e8] text-[#c86638]",
-} as const;
-
-const precipitationTone = {
-  NONE: "bg-[#edf3f6] text-[#617887]",
-  LIGHT: "bg-[#e5f4ff] text-[#3587bd]",
-  HEAVY: "bg-[#e8edff] text-[#536bb2]",
-} as const;
-
-const sunlightTone = {
-  LOW: "bg-[#edf1f4] text-[#667986]",
-  MODERATE: "bg-[#fff7dc] text-[#a8791e]",
-  STRONG: "bg-[#fff0d9] text-[#c66d19]",
-} as const;
 
 const emptyTone = "bg-[#edf3f6] text-[#718594]";
 

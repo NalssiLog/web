@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState, type ChangeEvent } from "react";
 import { ImagePlus, UserRound, X } from "lucide-react";
+import { useModalNavigation } from "@/hooks/use-modal-navigation";
 import { DEFAULT_PROFILE_IMAGES } from "@/lib/constants";
 import { isSupportedAvatarSource, normalizeSelectedImage } from "@/lib/image";
 import { useToastStore } from "@/store/toast-store";
@@ -27,6 +28,13 @@ export function ProfileImageModal({
   const objectUrlRef = useRef<string | undefined>(undefined);
 
   const [isSaving, setIsSaving] = useState(false);
+  const closeModal = useModalNavigation({
+    open: true,
+    onBack: () => {
+      if (!isSaving) onClose();
+    },
+    onDismiss: onClose,
+  });
 
   useEffect(() => () => {
     if (objectUrlRef.current) URL.revokeObjectURL(objectUrlRef.current);
@@ -76,7 +84,7 @@ export function ProfileImageModal({
         <div className="grid grid-cols-[40px_1fr_40px] items-center">
           <span />
           <h3 id="profile-image-modal-title" className="text-center text-lg font-extrabold">프로필 사진 변경</h3>
-          <button type="button" disabled={isSaving} onClick={onClose} className="icon-button disabled:opacity-50" aria-label="닫기"><X size={19} /></button>
+          <button type="button" disabled={isSaving} onClick={() => closeModal()} className="icon-button disabled:opacity-50" aria-label="닫기"><X size={19} /></button>
         </div>
 
         <div className="mt-5 flex justify-center">

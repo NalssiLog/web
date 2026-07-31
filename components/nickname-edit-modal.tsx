@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { Check, LoaderCircle, X } from "lucide-react";
+import { useModalNavigation } from "@/hooks/use-modal-navigation";
 import { authApi } from "@/lib/api/auth-api";
 import { getTextLength } from "@/lib/text";
 
@@ -27,6 +28,13 @@ export function NicknameEditModal({
   const normalizedNickname = nickname.trim();
   const isValid = isNicknameValid(nickname);
   const hasFeedback = (!isValid && nickname.length > 0) || checkState === "AVAILABLE" || checkState === "TAKEN";
+  const closeModal = useModalNavigation({
+    open: true,
+    onBack: () => {
+      if (!isSaving) onClose();
+    },
+    onDismiss: onClose,
+  });
 
   useEffect(() => () => {
     if (checkTimerRef.current) clearTimeout(checkTimerRef.current);
@@ -76,7 +84,7 @@ export function NicknameEditModal({
         <div className="grid grid-cols-[40px_1fr_40px] items-center">
           <span />
           <h3 id="nickname-modal-title" className="text-center text-lg font-extrabold">닉네임 변경</h3>
-          <button type="button" onClick={onClose} className="icon-button" aria-label="닫기"><X size={19} /></button>
+          <button type="button" onClick={() => closeModal()} className="icon-button" aria-label="닫기"><X size={19} /></button>
         </div>
 
         <div className="mt-5 rounded-[18px] border-2 border-[#d2e3ec] p-3.5">
