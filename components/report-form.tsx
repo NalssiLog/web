@@ -25,8 +25,6 @@ import { useToastStore } from "@/store/toast-store";
 const ACCEPTED_TYPES = ["image/jpeg", "image/png", "image/webp"];
 const MAX_IMAGE_SIZE = 5 * 1024 * 1024;
 const MAX_SOURCE_IMAGE_SIZE = 20 * 1024 * 1024;
-const REPORT_DRAFT_KEY = "nalssilog-report-draft";
-const REPORT_DRAFT_TTL = 6 * 60 * 60 * 1_000;
 const schema = z.object({
   content: z.string().trim().min(1, "날씨 이야기를 한 글자 이상 적어주세요.").max(100, "글은 100자까지 쓸 수 있어요."),
   temperature: z.enum(["COLD", "FRESH", "HOT"], { message: "체감온도를 골라주세요." }),
@@ -35,53 +33,6 @@ const schema = z.object({
   images: z.array(z.custom<File>()).max(3, "사진은 최대 3장까지 올릴 수 있어요."),
 });
 type ReportFormValues = z.infer<typeof schema>;
-const reportDraftSchema = z.object({
-  updatedAt: z.number(),
-  selectedReportLocation: z.object({
-    id: z.string().optional(),
-    label: z.string(),
-    fullName: z.string().optional(),
-    shortName: z.string().optional(),
-    latitude: z.number().optional(),
-    longitude: z.number().optional(),
-  }).nullable(),
-  content: z.string(),
-  temperature: z.enum(["COLD", "FRESH", "HOT"]).optional(),
-  precipitation: z.enum(["NONE", "LIGHT", "HEAVY"]).optional(),
-  sunlight: z.enum(["LOW", "MODERATE", "STRONG"]).optional(),
-  hadImages: z.boolean(),
-});
-
-function readReportDraft() {
-  try {
-    const value = window.sessionStorage.getItem(REPORT_DRAFT_KEY);
-    if (!value) return null;
-    const parsed = reportDraftSchema.safeParse(JSON.parse(value));
-    if (!parsed.success || Date.now() - parsed.data.updatedAt > REPORT_DRAFT_TTL) {
-      window.sessionStorage.removeItem(REPORT_DRAFT_KEY);
-      return null;
-    }
-    return parsed.data;
-  } catch {
-    return null;
-  }
-}
-
-function writeReportDraft(draft: z.infer<typeof reportDraftSchema>) {
-  try {
-    window.sessionStorage.setItem(REPORT_DRAFT_KEY, JSON.stringify(draft));
-  } catch {
-    // 저장소가 차단된 인앱브라우저에서는 현재 문서의 폼 상태만 유지한다.
-  }
-}
-
-function clearReportDraft() {
-  try {
-    window.sessionStorage.removeItem(REPORT_DRAFT_KEY);
-  } catch {
-    // 저장소가 차단되어 있으면 제거할 초안도 없다.
-  }
-}
 
 interface StatusOption<T extends WeatherStatus> { value: T; label: string }
 
@@ -115,7 +66,6 @@ export function ReportForm() {
   const [isOptimizingImages, setIsOptimizingImages] = useState(false);
   const [isPhotoSourceOpen, setIsPhotoSourceOpen] = useState(false);
   const [uploadProgress, setUploadProgress] = useState<ReportUploadProgress | null>(null);
-  const [isDraftReady, setIsDraftReady] = useState(false);
   const [previews, setPreviews] = useState<Array<{ file: File; url: string }>>([]);
   const showToast = useToastStore((state) => state.showToast);
   const { location, setLocation, isDetecting, detectionError, needsManualInput, setNeedsManualInput, detectLocation } = useCurrentLocation();
@@ -154,41 +104,6 @@ export function ReportForm() {
   }, []);
   useEffect(() => () => uploadControllerRef.current?.abort(), []);
   useEffect(() => {
-    const timeout = window.setTimeout(() => {
-      const draft = readReportDraft();
-      if (draft) {
-        setSelectedReportLocation(draft.selectedReportLocation);
-        reset({
-          content: draft.content,
-          images: [],
-          temperature: draft.temperature,
-          precipitation: draft.precipitation,
-          sunlight: draft.sunlight,
-        });
-        if (draft.hadImages) {
-          showToast("작성 내용을 복원했어요. 보안을 위해 사진은 다시 선택해 주세요.", "INFO");
-        }
-      }
-      setIsDraftReady(true);
-    }, 0);
-    return () => window.clearTimeout(timeout);
-  }, [reset, showToast]);
-  useEffect(() => {
-    if (!isDraftReady) return;
-    const timeout = window.setTimeout(() => {
-      writeReportDraft({
-        updatedAt: Date.now(),
-        selectedReportLocation,
-        content,
-        temperature,
-        precipitation,
-        sunlight,
-        hadImages: files.length > 0,
-      });
-    }, 150);
-    return () => window.clearTimeout(timeout);
-  }, [content, files.length, isDraftReady, precipitation, selectedReportLocation, sunlight, temperature]);
-  useEffect(() => {
     const closePhotoSource = () => setIsPhotoSourceOpen(false);
     const closePhotoSourceWhenVisible = () => {
       if (document.visibilityState === "visible") closePhotoSource();
@@ -211,7 +126,6 @@ export function ReportForm() {
       );
     },
     onSuccess: (report) => {
-      clearReportDraft();
       queryClient.setQueryData(["weather-report", report.id], report);
       queryClient.invalidateQueries({ queryKey: ["weather-reports"] });
       queryClient.invalidateQueries({ queryKey: ["weather-summary"] });
@@ -243,9 +157,11 @@ export function ReportForm() {
   });
 
   useEffect(() => {
-    const discardDraftBeforeHistoryExit = () => {
+    const resetFormBeforeHistoryExit = () => {
       if (mutation.isPending) return;
-      clearReportDraft();
+      // 2단계는 같은 페이지에 올린 history 항목으로 동작한다.
+      // 해당 항목을 닫는 뒤로가기는 작성 화면 이탈이 아니므로 현재 입력을 유지한다.
+      if (step === 2) return;
       flushSync(() => {
         setStep(1);
         setSelectedReportLocation(null);
@@ -256,13 +172,13 @@ export function ReportForm() {
       if (event.persisted && !mutation.isPending) setStep(1);
     };
 
-    window.addEventListener("popstate", discardDraftBeforeHistoryExit);
+    window.addEventListener("popstate", resetFormBeforeHistoryExit);
     window.addEventListener("pageshow", resetStepAfterPageRestore);
     return () => {
-      window.removeEventListener("popstate", discardDraftBeforeHistoryExit);
+      window.removeEventListener("popstate", resetFormBeforeHistoryExit);
       window.removeEventListener("pageshow", resetStepAfterPageRestore);
     };
-  }, [mutation.isPending, reset]);
+  }, [mutation.isPending, reset, step]);
 
   useEffect(() => {
     if (!mutation.isPending) return;
