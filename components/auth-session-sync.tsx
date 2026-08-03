@@ -37,6 +37,8 @@ export function AuthSessionSync() {
     setServerUser(session.data.authenticated && session.data.user ? session.data.user : undefined);
     if (session.data.result === "SIGNUP_REQUIRED" && session.data.pendingAuth) {
       setPendingSignupProvider(session.data.pendingAuth.provider, session.data.pendingAuth.email);
+    } else {
+      setPendingSignupProvider(undefined);
     }
   }, [session.data, setPendingSignupProvider, setServerUser]);
 

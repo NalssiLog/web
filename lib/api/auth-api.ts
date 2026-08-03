@@ -1,6 +1,6 @@
 import { getApiUrl } from "@/lib/api/config";
 import { apiRequest, jsonRequest } from "@/lib/api/http-client";
-import type { AvatarType, SocialProvider } from "@/lib/types";
+import type { AgreedTerm, AvatarType, SocialProvider, UserRole } from "@/lib/types";
 
 export type SessionAuthResult =
   | "SUCCESS"
@@ -21,6 +21,7 @@ export interface AuthUserResponse {
   nickname: string;
   profileImageUrl?: string | null;
   avatar?: { type: AvatarType; value: string | null };
+  role: UserRole;
 }
 
 export interface PendingAuthResponse {
@@ -44,10 +45,11 @@ export interface AuthMeResponse {
 }
 
 export interface SignupRequest {
-  agreedTerms: Array<{ type: "SERVICE" | "PRIVACY"; version: string }>;
+  agreedTerms: AgreedTerm[];
 }
 
 const providerPath: Record<SocialProvider, string> = {
+  APPLE: "apple",
   NAVER: "naver",
   KAKAO: "kakao",
   GOOGLE: "google",
@@ -55,7 +57,14 @@ const providerPath: Record<SocialProvider, string> = {
 
 function normalizeProvider(provider: string): SocialProvider {
   const normalized = provider.toUpperCase();
-  if (normalized === "NAVER" || normalized === "KAKAO" || normalized === "GOOGLE") return normalized;
+  if (
+    normalized === "NAVER" ||
+    normalized === "KAKAO" ||
+    normalized === "GOOGLE" ||
+    normalized === "APPLE"
+  ) {
+    return normalized;
+  }
   throw new Error("지원하지 않는 소셜 로그인 제공자예요.");
 }
 

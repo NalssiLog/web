@@ -1,13 +1,15 @@
 "use client";
 
 import { useMutation, useQuery, useQueryClient, type InfiniteData, type QueryKey } from "@tanstack/react-query";
-import { ArrowLeft, CloudRain, Heart, Sun, Thermometer, Trash2, UserRound } from "lucide-react";
+import { ArrowLeft, CloudRain, Ellipsis, Heart, Sun, Thermometer, Trash2, UserRound } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { useState, type ReactNode, type UIEvent } from "react";
 import { ErrorState } from "@/components/error-state";
+import { ReportActionsModal } from "@/components/report-actions-modal";
 import { ReportDeleteConfirmModal, type ModalDismiss } from "@/components/report-delete-confirm-modal";
+import { ReportFlagModal } from "@/components/report-flag-modal";
 import { weatherApi } from "@/lib/api";
 import { ApiError } from "@/lib/api/http-client";
 import { PRECIPITATION_OPTIONS, SUNLIGHT_OPTIONS, TEMPERATURE_OPTIONS, formatThanksCount, getLocationName, statusLabel } from "@/lib/constants";
@@ -72,6 +74,8 @@ export function ReportDetail() {
   const currentUser = useAuthStore((state) => state.user);
   const setLocation = useLocationStore((state) => state.setLocation);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [isActionsOpen, setIsActionsOpen] = useState(false);
+  const [isFlagModalOpen, setIsFlagModalOpen] = useState(false);
   const report = useQuery({ queryKey: ["weather-report", id], queryFn: () => weatherApi.getReport(id) });
   const thanks = useMutation<ThanksState, Error, void, ThanksMutationContext>({
     mutationFn: () => weatherApi.toggleThanks(id, Boolean(report.data?.isThanked)),
@@ -149,7 +153,6 @@ export function ReportDetail() {
       showToast(error instanceof Error ? error.message : "제보를 삭제하지 못했어요.", "ERROR");
     },
   });
-
   if (report.isLoading) return <DetailSkeleton onBack={() => router.back()} />;
   if (report.isError || !report.data) return <div className="page"><DetailHeader onBack={() => router.back()} title="제보 상세" /><ErrorState message={report.error instanceof Error ? report.error.message : undefined} onRetry={() => report.refetch()} /></div>;
   const item = report.data;
@@ -179,6 +182,7 @@ export function ReportDetail() {
         <button type="button" disabled={thanks.isPending} onClick={() => thanks.mutate()} aria-pressed={item.isThanked} aria-label={`감사해요 ${formatThanksCount(item.thanksCount)}개`} className={`flex shrink-0 items-center justify-center gap-1.5 rounded-[13px] border-2 px-3 py-2 text-xs font-extrabold transition-colors duration-150 disabled:cursor-wait ${item.isThanked ? "border-[#75c4ec] bg-[#e7f6ff] text-[#268fc7]" : "border-[#b9ddf0] text-[#45ace4]"}`}>
           <Heart size={17} fill={item.isThanked ? "currentColor" : "none"} className="-translate-y-px" /><span className="font-bold">{formatThanksCount(item.thanksCount)}</span>
         </button>
+        <button type="button" onClick={() => setIsActionsOpen(true)} className="flex size-9 shrink-0 items-center justify-center" aria-label="제보 작업 메뉴 열기"><Ellipsis size={20} /></button>
       </header>
 
       {item.images.length > 0 && <PhotoCarousel images={item.images} author={author} />}
@@ -193,6 +197,8 @@ export function ReportDetail() {
         {canDelete && <div className="mt-3 flex justify-end"><button type="button" disabled={deleteReport.isPending} onClick={() => setIsDeleteModalOpen(true)} className="flex items-center gap-1.5 rounded-xl px-3 py-2 text-xs font-extrabold text-[#b56868] transition hover:bg-[#fff5f3] hover:text-[#c95e5e] disabled:opacity-50"><Trash2 size={15} /> 제보 삭제</button></div>}
       </div>
       {isDeleteModalOpen && <ReportDeleteConfirmModal isSubmitting={deleteReport.isPending} onClose={() => setIsDeleteModalOpen(false)} onConfirm={(dismissModal) => deleteReport.mutate(dismissModal)} />}
+      {isActionsOpen && <ReportActionsModal onClose={() => setIsActionsOpen(false)} onFlag={() => setIsFlagModalOpen(true)} />}
+      {isFlagModalOpen && <ReportFlagModal reportId={id} onClose={() => setIsFlagModalOpen(false)} />}
     </article>
   );
 }

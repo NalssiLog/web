@@ -2,6 +2,7 @@ export type TemperatureStatus = "COLD" | "FRESH" | "HOT";
 export type PrecipitationStatus = "NONE" | "LIGHT" | "HEAVY";
 export type SunlightStatus = "LOW" | "MODERATE" | "STRONG";
 export type WeatherStatus = TemperatureStatus | PrecipitationStatus | SunlightStatus;
+export type UserRole = "MEMBER" | "MODERATOR" | "ADMIN";
 
 export type WeatherAuthor =
   | { type: "ANONYMOUS"; nickname?: string }
@@ -18,9 +19,10 @@ export type CurrentUser =
       provider?: SocialProvider;
       avatarUrl?: string;
       linkedProviders?: SocialProvider[];
+      role: UserRole;
     };
 
-export type SocialProvider = "NAVER" | "KAKAO" | "GOOGLE";
+export type SocialProvider = "NAVER" | "KAKAO" | "GOOGLE" | "APPLE";
 
 export type AvatarType = "DEFAULT" | "PRESET" | "CUSTOM";
 
@@ -38,6 +40,7 @@ export interface MemberAccount {
   avatar: MemberAvatar;
   connectedProviders: SocialProvider[];
   currentProvider: SocialProvider;
+  role: UserRole;
 }
 
 export interface MemberProfile {
@@ -87,6 +90,50 @@ export interface ThanksState {
   isThanked: boolean;
 }
 
+export type LegalAgreementType = "SERVICE" | "PRIVACY";
+
+export interface AgreedTerm {
+  type: LegalAgreementType;
+  version: string;
+}
+
+export type ReportFlagReason =
+  | "SPAM"
+  | "ABUSE"
+  | "HATE"
+  | "SEXUAL"
+  | "PRIVACY"
+  | "FALSE_INFORMATION"
+  | "OTHER";
+
+export interface ReportFlagInput {
+  reason: ReportFlagReason;
+  detail?: string | null;
+}
+
+export interface ReportFlagResponse {
+  id: string;
+  reportId: string;
+  reason: ReportFlagReason;
+  status: "PENDING";
+  createdAt: string;
+}
+
+export interface ReportBlockItem {
+  memberId: string;
+  nickname: string;
+  avatar: MemberAvatar | null;
+  blockedAt: string;
+}
+
+export interface ReportBlockPage {
+  items: ReportBlockItem[];
+  page: number;
+  size: number;
+  totalElements: number;
+  totalPages: number;
+}
+
 export interface CreateReportInput {
   location: Location;
   images: File[];
@@ -94,6 +141,7 @@ export interface CreateReportInput {
   temperature: TemperatureStatus;
   precipitation: PrecipitationStatus;
   sunlight: SunlightStatus;
+  agreedTerms?: AgreedTerm[];
 }
 
 export type ReportUploadStage = "PREPARING" | "UPLOADING" | "CREATING";

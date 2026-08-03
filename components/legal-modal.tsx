@@ -4,6 +4,7 @@ import { useEffect } from "react";
 import { ArrowLeft, X } from "lucide-react";
 import { PrivacyPolicyContent, TermsContent } from "@/components/legal-content";
 import { useModalNavigation } from "@/hooks/use-modal-navigation";
+import { CURRENT_PRIVACY_TERMS_VERSION, CURRENT_SERVICE_TERMS_VERSION } from "@/lib/legal";
 import { useLegalModalStore } from "@/store/legal-modal-store";
 
 export function LegalModal() {
@@ -32,6 +33,7 @@ export function LegalModal() {
   if (!document) return null;
   const isPrivacy = document === "PRIVACY";
   const title = isPrivacy ? "개인정보처리방침" : "서비스 이용약관";
+  const version = isPrivacy ? CURRENT_PRIVACY_TERMS_VERSION : CURRENT_SERVICE_TERMS_VERSION;
 
   return (
     <div className="fixed inset-0 z-[90] flex items-end justify-center bg-[#173144]/35 p-4 backdrop-blur-[2px] sm:items-center" role="presentation" onMouseDown={(event) => { if (event.target === event.currentTarget) closeModal(); }}>
@@ -42,7 +44,7 @@ export function LegalModal() {
           <button type="button" autoFocus={origin !== "SETTINGS"} onClick={() => closeModal()} className="icon-button" aria-label={`${title} 닫기`}><X size={20} /></button>
         </header>
         <div className="overflow-y-auto overscroll-contain px-5 pb-6 pt-4">
-          <p className="text-xs font-bold text-[#718594]">시행일 2026년 7월 21일</p>
+          <p className="text-xs font-bold text-[#718594]">버전 {version} / 시행일 2026년 7월 21일</p>
           <div className="legal-content mt-5">{isPrivacy ? <PrivacyPolicyContent /> : <TermsContent />}</div>
         </div>
       </section>

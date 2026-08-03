@@ -1,7 +1,7 @@
 "use client";
 
 import { useInfiniteQuery, useQuery } from "@tanstack/react-query";
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { AppHeader } from "@/components/app-header";
 import { EmptyState } from "@/components/empty-state";
 import { ErrorState } from "@/components/error-state";
@@ -11,17 +11,28 @@ import { ReportCard } from "@/components/report-card";
 import { ReportGridSkeleton } from "@/components/report-grid-skeleton";
 import { WeatherSummary, WeatherSummarySkeleton } from "@/components/weather-summary";
 import { useCurrentLocation } from "@/hooks/use-current-location";
+import { useLocationFavorite } from "@/hooks/use-location-favorite";
 import { weatherApi } from "@/lib/api";
 import { getLocationName } from "@/lib/constants";
 import { useToastStore } from "@/store/toast-store";
+import { useAuthStore } from "@/store/auth-store";
 
 export function HomeScreen() {
   const { location, setLocation, isDetecting, detectionError, needsManualInput, setNeedsManualInput, detectLocation } = useCurrentLocation({ refreshOnHomeResume: true });
   const showToast = useToastStore((state) => state.showToast);
+  const isMember = useAuthStore((state) => state.user.type === "MEMBER");
   const loadMoreRef = useRef<HTMLDivElement>(null);
   const [isManualRefreshAnimating, setIsManualRefreshAnimating] = useState(false);
   const locationLabel = location ? getLocationName(location, "short") : "";
   const locationKey = location?.id ?? locationLabel;
+  const showFavoriteError = useCallback(() => {
+    showToast("즐겨찾기를 변경하지 못했어요.", "ERROR");
+  }, [showToast]);
+  const favorite = useLocationFavorite({
+    location,
+    enabled: isMember,
+    onError: showFavoriteError,
+  });
   const summary = useQuery({ queryKey: ["weather-summary", locationKey], queryFn: () => weatherApi.getSummary(location!), enabled: !!location, refetchInterval: 10_000, refetchIntervalInBackground: false });
   const reports = useInfiniteQuery({
     queryKey: ["weather-reports", locationKey],
@@ -75,7 +86,10 @@ export function HomeScreen() {
         updatedAt={summary.dataUpdatedAt}
         isRefreshing={summary.isFetching || reports.isRefetching || isManualRefreshAnimating}
         canRefresh={Boolean(location)}
+        isFavorite={favorite.isFavorite}
+        isFavoriteDisabled={favorite.isLoading || favorite.isUpdating}
         onLocationClick={() => setNeedsManualInput(true)}
+        onFavoriteToggle={isMember && location?.id ? () => void favorite.toggleFavorite() : undefined}
         onRefresh={() => void refreshWeather()}
       />
       {showLocationError ? <ErrorState message="현재 동네를 불러오지 못했어요." transparent /> : showFullWeatherError ? <div className="flex min-h-64 flex-col items-center justify-center text-center"><p className="font-extrabold">서버 오류입니다</p><p className="mt-1 text-sm text-[#718594]">관리자에게 문의해 주세요</p></div> : <>

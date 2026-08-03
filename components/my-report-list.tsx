@@ -19,7 +19,6 @@ export function MyReportList({ memberId, columns = 2, publicProfile = false }: {
   });
   const { fetchNextPage, hasNextPage, isFetchingNextPage } = reports;
   const reportItems = reports.data?.pages.flatMap((page) => page.reports) ?? [];
-
   useEffect(() => {
     const target = loadMoreRef.current;
     if (!target || !hasNextPage) return;
