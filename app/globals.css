@@ -26,6 +26,8 @@ button, input, textarea { font: inherit; }
 button { cursor: pointer; }
 .app-shell {
   position: relative;
+  display: flex;
+  flex-direction: column;
   width: min(100%, 480px);
   min-height: 100vh;
   min-height: 100dvh;
@@ -35,7 +37,7 @@ button { cursor: pointer; }
   box-shadow: 0 0 48px rgba(48, 98, 126, .12);
 }
 .page { min-height: 100vh; min-height: 100dvh; padding: 0 20px 112px; }
-.main-tab-page { padding-bottom: 80px; }
+.main-tab-page { flex: 1; min-height: 0; padding-bottom: 20px; }
 .safe-top { padding-top: max(8px, env(safe-area-inset-top)); }
 .home-header-top { padding-top: max(9px, env(safe-area-inset-top)); }
 .main-tab-bar {
@@ -49,6 +51,10 @@ button { cursor: pointer; }
   border-top: 2px solid #dcecf4;
   background: rgba(238, 249, 255, .96);
   backdrop-filter: blur(14px);
+}
+.main-tab-footer-spacer {
+  height: calc(61px + max(7px, env(safe-area-inset-bottom)));
+  flex: none;
 }
 .mobile-fixed {
   position: fixed;
