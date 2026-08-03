@@ -270,6 +270,7 @@ export const httpWeatherApi: WeatherApi = {
       sunlight: input.sunlight,
       comment: input.content,
       imageKeys,
+      ...(input.agreedTerms ? { agreedTerms: input.agreedTerms } : {}),
     }, { signal: options.signal });
     options.onProgress?.({ stage: "CREATING", percent: 100 });
     return normalizeReport(report);

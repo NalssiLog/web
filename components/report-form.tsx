@@ -2,7 +2,7 @@
 
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { ArrowLeft, ChevronRight, ImagePlus, LoaderCircle, MapPin, X } from "lucide-react";
+import { ArrowLeft, Check, ChevronRight, ImagePlus, LoaderCircle, MapPin, X } from "lucide-react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { ChangeEvent, FormEvent, useEffect, useRef, useState } from "react";
@@ -17,9 +17,12 @@ import { useModalNavigation } from "@/hooks/use-modal-navigation";
 import { weatherApi } from "@/lib/api";
 import { PRECIPITATION_OPTIONS, SUGGESTED_MESSAGES, SUNLIGHT_OPTIONS, TEMPERATURE_OPTIONS, getLocationName } from "@/lib/constants";
 import { normalizeSelectedImage, optimizeReportImage } from "@/lib/image";
+import { CURRENT_PRIVACY_TERMS_VERSION, CURRENT_SERVICE_TERMS_VERSION, createRequiredReportAgreements } from "@/lib/legal";
 import { getTextLength, truncateText } from "@/lib/text";
 import type { CreateReportInput, Location, PrecipitationStatus, ReportUploadProgress, SunlightStatus, TemperatureStatus, WeatherStatus } from "@/lib/types";
 import { getWeatherStatusTone } from "@/lib/weather-status-tone";
+import { useAuthStore } from "@/store/auth-store";
+import { useLegalModalStore } from "@/store/legal-modal-store";
 import { useToastStore } from "@/store/toast-store";
 
 const ACCEPTED_TYPES = ["image/jpeg", "image/png", "image/webp"];
@@ -67,6 +70,11 @@ export function ReportForm() {
   const [isPhotoSourceOpen, setIsPhotoSourceOpen] = useState(false);
   const [uploadProgress, setUploadProgress] = useState<ReportUploadProgress | null>(null);
   const [previews, setPreviews] = useState<Array<{ file: File; url: string }>>([]);
+  const [serviceTermsAgreed, setServiceTermsAgreed] = useState(false);
+  const [privacyTermsAgreed, setPrivacyTermsAgreed] = useState(false);
+  const userType = useAuthStore((state) => state.user.type);
+  const hasCheckedServerSession = useAuthStore((state) => state.hasCheckedServerSession);
+  const openLegalDocument = useLegalModalStore((state) => state.openLegalDocument);
   const showToast = useToastStore((state) => state.showToast);
   const { location, setLocation, isDetecting, detectionError, needsManualInput, setNeedsManualInput, detectLocation } = useCurrentLocation();
   const { register, handleSubmit, control, setValue, reset, resetField, formState: { errors } } = useForm<ReportFormValues>({
@@ -81,8 +89,13 @@ export function ReportForm() {
   const contentField = register("content");
   const contentLength = getTextLength(content);
   const reportLocation = selectedReportLocation ?? location;
+  const requiresGuestAgreement = hasCheckedServerSession && userType === "ANONYMOUS";
+  const hasRequiredGuestAgreement = serviceTermsAgreed && privacyTermsAgreed;
   const canGoToStory = Boolean(reportLocation && temperature && precipitation && sunlight);
-  const canSubmitReport = content.trim().length > 0 && contentLength <= 100;
+  const canSubmitReport = hasCheckedServerSession
+    && content.trim().length > 0
+    && contentLength <= 100
+    && (!requiresGuestAgreement || hasRequiredGuestAgreement);
   useEffect(() => {
     const activeFiles = new Set(files);
     previewUrlsRef.current.forEach((url, file) => {
@@ -118,10 +131,18 @@ export function ReportForm() {
 
   const mutation = useMutation({
     mutationFn: (values: ReportFormValues) => {
+      if (!hasCheckedServerSession) throw new Error("로그인 상태를 확인하고 있어요.");
+      if (requiresGuestAgreement && !hasRequiredGuestAgreement) {
+        throw new Error("필수 약관에 모두 동의해야 합니다.");
+      }
       const controller = new AbortController();
       uploadControllerRef.current = controller;
       return weatherApi.createReport(
-        { ...values, location: reportLocation! } as CreateReportInput,
+        {
+          ...values,
+          location: reportLocation!,
+          agreedTerms: requiresGuestAgreement ? createRequiredReportAgreements() : undefined,
+        } as CreateReportInput,
         { signal: controller.signal, onProgress: setUploadProgress },
       );
     },
@@ -165,6 +186,8 @@ export function ReportForm() {
       flushSync(() => {
         setStep(1);
         setSelectedReportLocation(null);
+        setServiceTermsAgreed(false);
+        setPrivacyTermsAgreed(false);
         reset({ content: "", images: [] });
       });
     };
@@ -233,6 +256,7 @@ export function ReportForm() {
   const submit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     if (!reportLocation) { setNeedsManualInput(true); return; }
+    if (!hasCheckedServerSession || (requiresGuestAgreement && !hasRequiredGuestAgreement)) return;
     if (submitLockRef.current || mutation.isPending) return;
     submitLockRef.current = true;
     let mutationStarted = false;
@@ -301,6 +325,28 @@ export function ReportForm() {
         <div className="flex items-end justify-between"><label htmlFor="content" className="text-[17px] font-extrabold">날씨 이야기 <span className="text-[#45ace4]">*</span></label><span className="text-xs font-bold text-[#8ba0ae]">{contentLength}/100</span></div>
         <textarea id="content" {...contentField} onChange={(event) => { event.target.value = truncateText(event.target.value, 100); contentField.onChange(event); }} maxLength={100} rows={5} placeholder="밖에 나갈 이웃에게 지금 날씨를 알려주세요." className="mt-3 w-full resize-none rounded-[20px] border-2 border-[#d2e3ec] bg-transparent p-4 leading-6 outline-none transition placeholder:text-[#a4b3bd] focus:border-[#45ace4] focus:ring-3 focus:ring-[#45ace4]/10" />
         <div className="mt-3 flex flex-wrap gap-2">{SUGGESTED_MESSAGES.map((message) => <button key={message} type="button" onClick={() => setValue("content", message, { shouldValidate: true })} className="rounded-full border-2 border-[#d2e3ec] px-3.5 py-2 text-xs font-bold text-[#52768a]">{message}</button>)}</div>
+        {requiresGuestAgreement && <section className="mt-5 overflow-hidden rounded-[20px] border-2 border-[#d2e3ec]" aria-labelledby="guest-report-agreement-title">
+          <div className="px-4 pb-3 pt-4">
+            <h2 id="guest-report-agreement-title" className="text-sm font-extrabold">비회원 제보 필수 동의</h2>
+            <p className="mt-1 text-xs font-semibold text-[#718594]">제보를 올리기 전에 아래 약관을 확인해 주세요.</p>
+          </div>
+          <div className="flex items-center gap-3 border-t-2 border-[#dcecf4] px-4 py-3.5 text-sm font-bold">
+            <label className="group flex min-w-0 flex-1 cursor-pointer items-center gap-3">
+              <input type="checkbox" checked={serviceTermsAgreed} onChange={(event) => setServiceTermsAgreed(event.target.checked)} className="peer sr-only" />
+              <span className={`flex size-5 shrink-0 items-center justify-center rounded-md border-2 transition peer-focus-visible:ring-2 peer-focus-visible:ring-[#8dd3f7] peer-focus-visible:ring-offset-2 ${serviceTermsAgreed ? "border-[#45ace4] bg-[#45ace4] text-white" : "border-[#c8d8e1] text-transparent group-hover:border-[#45ace4]"}`} aria-hidden="true">{serviceTermsAgreed && <Check size={14} strokeWidth={3} />}</span>
+              <span className="min-w-0"><span className="mr-1 text-[#238fc9]">[필수]</span>서비스 이용약관 동의 <span className="text-xs text-[#718594]">v{CURRENT_SERVICE_TERMS_VERSION}</span></span>
+            </label>
+            <button type="button" onClick={() => openLegalDocument("TERMS")} className="shrink-0 text-xs font-extrabold text-[#718594] underline underline-offset-2">보기</button>
+          </div>
+          <div className="flex items-center gap-3 border-t-2 border-[#dcecf4] px-4 py-3.5 text-sm font-bold">
+            <label className="group flex min-w-0 flex-1 cursor-pointer items-center gap-3">
+              <input type="checkbox" checked={privacyTermsAgreed} onChange={(event) => setPrivacyTermsAgreed(event.target.checked)} className="peer sr-only" />
+              <span className={`flex size-5 shrink-0 items-center justify-center rounded-md border-2 transition peer-focus-visible:ring-2 peer-focus-visible:ring-[#8dd3f7] peer-focus-visible:ring-offset-2 ${privacyTermsAgreed ? "border-[#45ace4] bg-[#45ace4] text-white" : "border-[#c8d8e1] text-transparent group-hover:border-[#45ace4]"}`} aria-hidden="true">{privacyTermsAgreed && <Check size={14} strokeWidth={3} />}</span>
+              <span className="min-w-0"><span className="mr-1 text-[#238fc9]">[필수]</span>개인정보처리방침 동의 <span className="text-xs text-[#718594]">v{CURRENT_PRIVACY_TERMS_VERSION}</span></span>
+            </label>
+            <button type="button" onClick={() => openLegalDocument("PRIVACY")} className="shrink-0 text-xs font-extrabold text-[#718594] underline underline-offset-2">보기</button>
+          </div>
+        </section>}
         {mutation.isError && <p className="mt-6 rounded-2xl bg-[#fff3f0] p-4 text-center text-sm font-semibold text-[#b4534a]">{mutation.error instanceof Error ? mutation.error.message : "제보를 올리지 못했어요. 잠시 후 다시 시도해 주세요."}</p>}
       </section>}
 

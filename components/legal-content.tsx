@@ -61,6 +61,7 @@ export function PrivacyPolicyContent() {
 
     <LegalSection title="8. 이용자의 권리와 행사 방법">
       <p>이용자는 자신의 개인정보에 대해 열람, 정정, 삭제, 처리정지 및 동의 철회를 요청할 수 있습니다. 프로필의 계정 정보와 회원 탈퇴 기능을 이용하거나 아래 이메일로 요청할 수 있으며, 서비스는 본인 확인 후 관련 법령에 따라 처리합니다.</p>
+      <p>앱을 삭제했거나 로그인할 수 없는 경우에는 <a href="/account-deletion">계정 삭제 요청 페이지</a>에서 외부 요청 방법을 확인할 수 있습니다.</p>
     </LegalSection>
 
     <LegalSection title="9. 안전성 확보 조치">

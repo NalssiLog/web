@@ -1,18 +1,50 @@
 "use client";
 
-import { useQuery } from "@tanstack/react-query";
-import { ArrowLeft, Grid3X3, UserRound } from "lucide-react";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { ArrowLeft, Ellipsis, Grid3X3, UserRound } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
+import { AuthorBlockConfirmModal } from "@/components/author-block-confirm-modal";
 import { ErrorState } from "@/components/error-state";
 import { MyReportList } from "@/components/my-report-list";
 import { ProfilePreviewModal } from "@/components/profile-preview-modal";
+import { ReportActionsModal } from "@/components/report-actions-modal";
 import { weatherApi } from "@/lib/api";
+import { moderationApi } from "@/lib/api/moderation-api";
+import { useAuthStore } from "@/store/auth-store";
+import { useToastStore } from "@/store/toast-store";
 
 export function MemberPage({ memberId }: { memberId: string }) {
   const router = useRouter();
+  const queryClient = useQueryClient();
+  const currentUser = useAuthStore((state) => state.user);
+  const showToast = useToastStore((state) => state.showToast);
   const [isProfilePreviewOpen, setIsProfilePreviewOpen] = useState(false);
+  const [isActionsOpen, setIsActionsOpen] = useState(false);
+  const [isBlockModalOpen, setIsBlockModalOpen] = useState(false);
   const profile = useQuery({ queryKey: ["member-profile", memberId], queryFn: () => weatherApi.getMemberProfile(memberId) });
+  const canBlock = currentUser.type === "MEMBER" && currentUser.id !== memberId;
+  const blockAuthor = useMutation({
+    mutationFn: () => {
+      if (!canBlock) {
+        throw new Error("로그인이 필요한 기능이에요.");
+      }
+      return moderationApi.blockMember(memberId);
+    },
+    onSuccess: () => {
+      setIsBlockModalOpen(false);
+      void Promise.all([
+        queryClient.invalidateQueries({ queryKey: ["report-blocks"] }),
+        queryClient.invalidateQueries({ queryKey: ["weather-reports"] }),
+        queryClient.invalidateQueries({ queryKey: ["member-weather-reports"] }),
+      ]);
+      showToast("작성자를 차단했어요.", "SUCCESS");
+      router.back();
+    },
+    onError: (error) => {
+      showToast(error instanceof Error ? error.message : "작성자를 차단하지 못했어요.", "ERROR");
+    },
+  });
 
   if (profile.isLoading) {
     return <MemberPageSkeleton onBack={() => router.back()} />;
@@ -27,7 +59,7 @@ export function MemberPage({ memberId }: { memberId: string }) {
       <header className="safe-top spacious-page-header sticky top-0 z-30 flex items-center justify-between bg-[#eef9ff] px-5 pb-2">
         <button type="button" onClick={() => router.back()} className="header-back-button" aria-label="뒤로 가기"><ArrowLeft size={18} /></button>
         <h1 className="text-lg font-extrabold">프로필</h1>
-        <span className="w-9" />
+        {canBlock ? <button type="button" onClick={() => setIsActionsOpen(true)} className="flex size-9 items-center justify-center" aria-label="프로필 작업 메뉴 열기"><Ellipsis size={20} /></button> : <span className="w-9" />}
       </header>
       <section className="flex items-center gap-5 px-5 pb-6 pt-0">
         <button type="button" onClick={() => setIsProfilePreviewOpen(true)} className="flex size-18 shrink-0 items-center justify-center rounded-full bg-white bg-cover bg-center text-[#45ace4] shadow-sm" style={profile.data.avatarUrl ? { backgroundImage: `url(${profile.data.avatarUrl})` } : undefined} aria-label="프로필 사진 크게 보기">
@@ -40,6 +72,8 @@ export function MemberPage({ memberId }: { memberId: string }) {
         <MyReportList memberId={memberId} columns={3} publicProfile />
       </section>
       {isProfilePreviewOpen && <ProfilePreviewModal avatarUrl={profile.data.avatarUrl} onClose={() => setIsProfilePreviewOpen(false)} />}
+      {isActionsOpen && <ReportActionsModal onClose={() => setIsActionsOpen(false)} onBlock={() => setIsBlockModalOpen(true)} />}
+      {isBlockModalOpen && <AuthorBlockConfirmModal isSubmitting={blockAuthor.isPending} onClose={() => setIsBlockModalOpen(false)} onConfirm={() => blockAuthor.mutate()} />}
     </main>
   );
 }

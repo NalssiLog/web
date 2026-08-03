@@ -1,6 +1,6 @@
 import type { MetadataRoute } from "next";
 
-const publicRoutes = ["", "/privacy-policy", "/terms"];
+const publicRoutes = ["", "/privacy", "/terms", "/account-deletion"];
 
 export default function sitemap(): MetadataRoute.Sitemap {
   const lastModified = new Date();

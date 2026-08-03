@@ -9,17 +9,12 @@ import { authApi, type OAuthCallbackResult } from "@/lib/api/auth-api";
 import { markAccountPanelReturn } from "@/lib/account-panel-return";
 import { resolveApiUrl } from "@/lib/api/config";
 import { logger } from "@/lib/logging";
+import { socialProviderLabel } from "@/lib/social-providers";
 import type { SocialProvider } from "@/lib/types";
 import { useAuthStore } from "@/store/auth-store";
 import { useToastStore } from "@/store/toast-store";
 
 const authLogger = logger.child("auth.callback");
-
-const providerLabel: Record<SocialProvider, string> = {
-  NAVER: "네이버",
-  KAKAO: "카카오",
-  GOOGLE: "구글",
-};
 
 function isOAuthCallbackResult(value: string | null): value is OAuthCallbackResult {
   return ["SUCCESS", "SIGNUP_REQUIRED", "LINK_REQUIRED", "LINK_SUCCESS", "LINK_FAILED", "FAILED"].includes(value ?? "");
@@ -127,7 +122,9 @@ export function AuthCallbackScreen() {
   if (!pendingLink) {
     return <main className="flex min-h-[75dvh] items-center justify-center"><div className="text-center"><LoaderCircle className="mx-auto animate-spin text-[#45ace4]" /><p className="mt-3 text-sm font-bold text-[#718594]">로그인 정보를 확인하고 있어요.</p></div></main>;
   }
-  const existingProvider = pendingLink.existingProviders?.[0];
+  const existingProviderSummary = pendingLink.existingProviders
+    ?.map((provider) => socialProviderLabel[provider])
+    .join(" 또는 ");
 
   return (
     <main className="flex min-h-[75dvh] items-center justify-center px-5">
@@ -136,8 +133,8 @@ export function AuthCallbackScreen() {
         <div className="mt-4 rounded-[20px] border-2 border-[#d2e3ec] px-4 py-5 text-center">
           <div className="mx-auto w-fit"><SocialIcon provider={pendingLink.provider} /></div>
           <p className="mt-4 text-xs font-extrabold text-[#238fc9]">{pendingLink.email}</p>
-          <p className="mt-3 text-sm font-extrabold">{existingProvider ? `이미 ${providerLabel[existingProvider]} 계정이 있어요.` : "이미 가입된 회원 정보가 있어요."}</p>
-          <p className="mt-2 text-sm font-semibold text-[#526a7a]">{providerLabel[pendingLink.provider]} 계정을 연동할까요?</p>
+          <p className="mt-3 text-sm font-extrabold">{existingProviderSummary ? `이미 ${existingProviderSummary} 계정이 있어요.` : "이미 가입된 회원 정보가 있어요."}</p>
+          <p className="mt-2 text-sm font-semibold text-[#526a7a]">{socialProviderLabel[pendingLink.provider]} 계정을 연동할까요?</p>
         </div>
         <div className="mt-4 grid grid-cols-2 gap-2.5">
           <button type="button" disabled={isSubmitting} onClick={() => void cancel()} className="rounded-2xl border-2 border-[#d2e3ec] py-3.5 text-sm font-extrabold text-[#526a7a] disabled:opacity-50">취소</button>

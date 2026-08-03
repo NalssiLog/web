@@ -4,10 +4,12 @@ import type { ReactNode } from "react";
 
 export function LegalDocument({
   title,
+  version,
   effectiveDate,
   children,
 }: {
   title: string;
+  version: string;
   effectiveDate: string;
   children: ReactNode;
 }) {
@@ -19,7 +21,7 @@ export function LegalDocument({
         <span />
       </header>
       <div className="rounded-[22px] border-2 border-[#d2e3ec] p-5">
-        <p className="text-xs font-bold text-[#718594]">시행일 {effectiveDate}</p>
+        <p className="text-xs font-bold text-[#718594]">버전 {version} / 시행일 {effectiveDate}</p>
         <div className="legal-content mt-5">{children}</div>
       </div>
     </main>

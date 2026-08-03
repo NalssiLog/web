@@ -7,16 +7,11 @@ import { useCallback, useEffect, useState } from "react";
 import { SocialIcon } from "@/components/social-icon";
 import { authApi } from "@/lib/api/auth-api";
 import { ApiError } from "@/lib/api/http-client";
-import type { SocialProvider } from "@/lib/types";
+import { CURRENT_PRIVACY_TERMS_VERSION, CURRENT_SERVICE_TERMS_VERSION } from "@/lib/legal";
+import { socialProviderLabel } from "@/lib/social-providers";
 import { useAuthStore } from "@/store/auth-store";
 import { useLegalModalStore } from "@/store/legal-modal-store";
 import { useToastStore } from "@/store/toast-store";
-
-const providerLabel: Record<SocialProvider, string> = {
-  NAVER: "네이버",
-  KAKAO: "카카오",
-  GOOGLE: "구글",
-};
 
 export function SignupForm() {
   const router = useRouter();
@@ -84,8 +79,8 @@ export function SignupForm() {
     try {
       await authApi.signup({
         agreedTerms: [
-          { type: "SERVICE", version: "1.0" },
-          { type: "PRIVACY", version: "1.0" },
+          { type: "SERVICE", version: CURRENT_SERVICE_TERMS_VERSION },
+          { type: "PRIVACY", version: CURRENT_PRIVACY_TERMS_VERSION },
         ],
       });
       const session = await authApi.getMe();
@@ -123,7 +118,7 @@ export function SignupForm() {
           <div className="mt-3 flex items-center gap-3">
             <SocialIcon provider={provider} className="size-11" />
             <div className="min-w-0">
-              <p className="text-sm font-extrabold">{providerLabel[provider]} 계정</p>
+              <p className="text-sm font-extrabold">{socialProviderLabel[provider]} 계정</p>
               <p className="mt-0.5 truncate text-xs font-semibold text-[#718594]">{pendingEmail ?? "이메일 정보 없음"}</p>
             </div>
           </div>

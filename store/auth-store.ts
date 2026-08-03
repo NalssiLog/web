@@ -2,7 +2,7 @@
 
 import { create } from "zustand";
 import { resolveProfileImage } from "@/lib/constants";
-import type { AvatarType, CurrentUser, SocialProvider } from "@/lib/types";
+import type { AvatarType, CurrentUser, SocialProvider, UserRole } from "@/lib/types";
 
 const AUTH_SESSION_HINT_KEY = "nalssilog-auth-session";
 
@@ -33,6 +33,7 @@ interface ServerUser {
   nickname: string;
   profileImageUrl?: string | null;
   avatar?: { type: AvatarType; value: string | null };
+  role: UserRole;
 }
 
 interface AuthState {
@@ -65,6 +66,7 @@ export const useAuthStore = create<AuthState>((set) => ({
             id: serverUser.id,
             nickname: serverUser.nickname,
             avatarUrl: resolveProfileImage(serverUser.profileImageUrl ?? serverUser.avatar?.value),
+            role: serverUser.role,
           }
         : anonymousUser,
       hasCheckedServerSession: true,
