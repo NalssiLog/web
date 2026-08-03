@@ -29,11 +29,8 @@ export function SiteFooter() {
         }`}
       >
         <p className="text-sm font-extrabold text-[#526a7a]">날씨로그</p>
-        <p className="mx-auto mt-2 max-w-[320px] text-[11px] font-semibold leading-5 text-[#718594]">
-          우리 동네 이웃이 직접 전하는 현재 날씨를 확인하고 공유하는 서비스입니다.
-        </p>
         <nav
-          className="mt-3 flex flex-wrap items-center justify-center gap-x-2 gap-y-1 text-[11px] font-semibold text-[#718594]"
+          className="mt-3 flex flex-wrap items-center justify-center gap-x-3 gap-y-1 text-[11px] font-semibold text-[#718594]"
           aria-label="서비스 안내"
         >
           <Link
@@ -46,7 +43,6 @@ export function SiteFooter() {
           >
             개인정보처리방침
           </Link>
-          <span className="text-[#bfd0da]" aria-hidden="true">/</span>
           <Link
             href="/terms"
             onClick={(event) => {
@@ -57,7 +53,6 @@ export function SiteFooter() {
           >
             서비스 이용약관
           </Link>
-          <span className="text-[#bfd0da]" aria-hidden="true">/</span>
           <button
             type="button"
             onClick={() => setIsFeedbackOpen(true)}
