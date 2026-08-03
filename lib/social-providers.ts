@@ -11,5 +11,4 @@ export const webSocialProviders = [
   "NAVER",
   "KAKAO",
   "GOOGLE",
-  "APPLE",
 ] as const satisfies readonly SocialProvider[];

@@ -9,6 +9,7 @@ import { authApi, type OAuthCallbackResult } from "@/lib/api/auth-api";
 import { markAccountPanelReturn } from "@/lib/account-panel-return";
 import { resolveApiUrl } from "@/lib/api/config";
 import { logger } from "@/lib/logging";
+import { isOAuthCallbackFailure } from "@/lib/oauth-callback";
 import { socialProviderLabel } from "@/lib/social-providers";
 import type { SocialProvider } from "@/lib/types";
 import { useAuthStore } from "@/store/auth-store";
@@ -45,22 +46,30 @@ export function AuthCallbackScreen() {
     const result: OAuthCallbackResult = isOAuthCallbackResult(callbackResult) ? callbackResult : "FAILED";
 
     void authApi.getMe().then((session) => {
+      const code = searchParams.get("code");
+      if (isOAuthCallbackFailure(result, code)) {
+        if (session.result === "SUCCESS" && session.authenticated && session.user) {
+          setServerUser(session.user);
+        } else {
+          setServerUser(undefined);
+        }
+        setPendingSignupProvider(undefined);
+        queryClient.removeQueries({ queryKey: ["auth", "me"], exact: true });
+        authLogger.warn("authentication_failed", { result, code: code ?? "UNKNOWN" });
+        showToast(getOAuthFailureMessage(code), code === "OAUTH_CANCELLED" ? "INFO" : "ERROR");
+        router.replace(result === "LINK_FAILED" && session.authenticated ? "/mypage" : "/");
+        return;
+      }
+
       queryClient.setQueryData(["auth", "me"], session);
       if (session.result === "SUCCESS" && session.authenticated && session.user) {
         setServerUser(session.user);
-        const code = searchParams.get("code");
         if (result === "LINK_SUCCESS") {
           authLogger.info("authentication_completed", { result });
           queryClient.removeQueries({ queryKey: ["members", "me"], exact: true });
           markAccountPanelReturn();
           showToast("소셜 계정을 연동했어요.", "SUCCESS");
           router.replace("/mypage");
-          return;
-        }
-        if (result === "LINK_FAILED" || result === "FAILED") {
-          authLogger.warn("authentication_failed", { result, code: code ?? "UNKNOWN" });
-          showToast(getOAuthFailureMessage(code), code === "OAUTH_CANCELLED" ? "INFO" : "ERROR");
-          router.replace(result === "LINK_FAILED" ? "/mypage" : "/");
           return;
         }
         authLogger.info("authentication_completed", { result });
@@ -80,7 +89,6 @@ export function AuthCallbackScreen() {
         return;
       }
 
-      const code = searchParams.get("code");
       if (code === "OAUTH_CANCELLED") {
         authLogger.info("authentication_cancelled", { result });
       } else {
