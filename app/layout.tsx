@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import "./globals.css";
 import { Providers } from "@/app/providers";
 import { MainTabNavigation } from "@/components/main-tab-navigation";
+import { SiteFooter } from "@/components/site-footer";
 
 const siteUrl = new URL("https://nalssilog.com");
 const siteDescription = "우리 동네 사람들이 직접 전하는 지금 날씨를 사진과 함께 확인하고 제보해 보세요.";
@@ -54,6 +55,7 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
         <Providers>
           <div className="app-shell">
             {children}
+            <SiteFooter />
             <MainTabNavigation />
           </div>
         </Providers>
