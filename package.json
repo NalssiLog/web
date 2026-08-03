@@ -1,6 +1,6 @@
 {
   "name": "nalssilog-web",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "private": true,
   "scripts": {
     "config:init": "git -c submodule.env-config.update=checkout submodule update --init --checkout env-config && git -C env-config switch main && git -C env-config pull --ff-only origin main && npm run config:sync",

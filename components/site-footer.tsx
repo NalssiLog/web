@@ -22,48 +22,55 @@ export function SiteFooter() {
     <>
       <footer
         id="site-footer"
-        className={`border-t-2 border-[#dcecf4] px-5 pt-6 text-center ${
-          hasMainTabNavigation
-            ? "pb-[calc(76px+env(safe-area-inset-bottom))]"
-            : "pb-[max(32px,env(safe-area-inset-bottom))]"
-        }`}
+        className="border-t-2 border-[#dcecf4] text-center"
       >
-        <p className="text-sm font-extrabold text-[#526a7a]">날씨로그</p>
-        <nav
-          className="mt-3 flex flex-wrap items-center justify-center gap-x-3 gap-y-1 text-[11px] font-semibold text-[#718594]"
-          aria-label="서비스 안내"
+        <div
+          className={
+            hasMainTabNavigation
+              ? "px-5 py-6"
+              : "px-5 pb-[max(24px,env(safe-area-inset-bottom))] pt-6"
+          }
         >
-          <Link
-            href="/privacy"
-            onClick={(event) => {
-              event.preventDefault();
-              openLegalDocument("PRIVACY");
-            }}
-            className="transition-colors hover:text-[#238fc9]"
+          <p className="text-sm font-extrabold text-[#526a7a]">날씨로그</p>
+          <nav
+            className="mt-3 flex flex-wrap items-center justify-center gap-x-3 gap-y-1 text-[11px] font-semibold text-[#718594]"
+            aria-label="서비스 안내"
           >
-            개인정보처리방침
-          </Link>
-          <Link
-            href="/terms"
-            onClick={(event) => {
-              event.preventDefault();
-              openLegalDocument("TERMS");
-            }}
-            className="transition-colors hover:text-[#238fc9]"
-          >
-            서비스 이용약관
-          </Link>
-          <button
-            type="button"
-            onClick={() => setIsFeedbackOpen(true)}
-            className="transition-colors hover:text-[#238fc9]"
-          >
-            서비스 피드백
-          </button>
-        </nav>
-        <p className="mt-2 text-[10px] font-medium text-[#8ba0ae]">
-          © 2026 날씨로그. All rights reserved.
-        </p>
+            <Link
+              href="/privacy"
+              onClick={(event) => {
+                event.preventDefault();
+                openLegalDocument("PRIVACY");
+              }}
+              className="transition-colors hover:text-[#238fc9]"
+            >
+              개인정보처리방침
+            </Link>
+            <Link
+              href="/terms"
+              onClick={(event) => {
+                event.preventDefault();
+                openLegalDocument("TERMS");
+              }}
+              className="transition-colors hover:text-[#238fc9]"
+            >
+              서비스 이용약관
+            </Link>
+            <button
+              type="button"
+              onClick={() => setIsFeedbackOpen(true)}
+              className="transition-colors hover:text-[#238fc9]"
+            >
+              서비스 피드백
+            </button>
+          </nav>
+          <p className="mt-2 text-[10px] font-medium text-[#8ba0ae]">
+            © 2026 날씨로그. All rights reserved.
+          </p>
+        </div>
+        {hasMainTabNavigation ? (
+          <div className="main-tab-footer-spacer" aria-hidden="true" />
+        ) : null}
       </footer>
 
       {isFeedbackOpen ? (
