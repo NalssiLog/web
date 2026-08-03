@@ -10,3 +10,7 @@ export function isOAuthCallbackFailure(
     code === "OAUTH_CANCELLED"
   );
 }
+
+export function getOAuthFailureDestination(authenticated: boolean) {
+  return authenticated ? "ACCOUNT" : "HOME";
+}

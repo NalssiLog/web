@@ -9,7 +9,10 @@ import { authApi, type OAuthCallbackResult } from "@/lib/api/auth-api";
 import { markAccountPanelReturn } from "@/lib/account-panel-return";
 import { resolveApiUrl } from "@/lib/api/config";
 import { logger } from "@/lib/logging";
-import { isOAuthCallbackFailure } from "@/lib/oauth-callback";
+import {
+  getOAuthFailureDestination,
+  isOAuthCallbackFailure,
+} from "@/lib/oauth-callback";
 import { socialProviderLabel } from "@/lib/social-providers";
 import type { SocialProvider } from "@/lib/types";
 import { useAuthStore } from "@/store/auth-store";
@@ -48,6 +51,12 @@ export function AuthCallbackScreen() {
     void authApi.getMe().then((session) => {
       const code = searchParams.get("code");
       if (isOAuthCallbackFailure(result, code)) {
+        const isAuthenticated =
+          session.result === "SUCCESS" &&
+          session.authenticated &&
+          Boolean(session.user);
+        const destination = getOAuthFailureDestination(isAuthenticated);
+
         if (session.result === "SUCCESS" && session.authenticated && session.user) {
           setServerUser(session.user);
         } else {
@@ -56,8 +65,18 @@ export function AuthCallbackScreen() {
         setPendingSignupProvider(undefined);
         queryClient.removeQueries({ queryKey: ["auth", "me"], exact: true });
         authLogger.warn("authentication_failed", { result, code: code ?? "UNKNOWN" });
-        showToast(getOAuthFailureMessage(code), code === "OAUTH_CANCELLED" ? "INFO" : "ERROR");
-        router.replace(result === "LINK_FAILED" && session.authenticated ? "/mypage" : "/");
+        showToast(
+          code === "OAUTH_CANCELLED" && destination === "ACCOUNT"
+            ? "소셜 계정 연동을 취소했어요."
+            : getOAuthFailureMessage(code),
+          code === "OAUTH_CANCELLED" ? "INFO" : "ERROR",
+        );
+        if (destination === "ACCOUNT") {
+          markAccountPanelReturn();
+          router.replace("/mypage");
+        } else {
+          router.replace("/");
+        }
         return;
       }
 

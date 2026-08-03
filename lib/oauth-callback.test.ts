@@ -1,5 +1,8 @@
 import { describe, expect, it } from "vitest";
-import { isOAuthCallbackFailure } from "@/lib/oauth-callback";
+import {
+  getOAuthFailureDestination,
+  isOAuthCallbackFailure,
+} from "@/lib/oauth-callback";
 
 describe("isOAuthCallbackFailure", () => {
   it("treats provider cancellation as failure even with a stale signup hint", () => {
@@ -15,5 +18,10 @@ describe("isOAuthCallbackFailure", () => {
   it("rejects explicit login and link failures", () => {
     expect(isOAuthCallbackFailure("FAILED", null)).toBe(true);
     expect(isOAuthCallbackFailure("LINK_FAILED", null)).toBe(true);
+  });
+
+  it("returns an authenticated member to the account panel after failure", () => {
+    expect(getOAuthFailureDestination(true)).toBe("ACCOUNT");
+    expect(getOAuthFailureDestination(false)).toBe("HOME");
   });
 });
