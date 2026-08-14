@@ -85,6 +85,17 @@ export interface ReportPage {
   nextCursor?: string;
 }
 
+export interface NationwideLiveItem {
+  reportId: string;
+  location: Location;
+  message: string;
+  createdAt: string;
+}
+
+export interface NationwideLiveFeed {
+  items: NationwideLiveItem[];
+}
+
 export interface ThanksState {
   thanksCount: number;
   isThanked: boolean;

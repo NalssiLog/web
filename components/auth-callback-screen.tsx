@@ -138,6 +138,7 @@ export function AuthCallbackScreen() {
     setIsSubmitting(true);
     try {
       await authApi.cancelLink();
+      showToast("계정 연동을 취소했어요.", "INFO");
     } catch (error) {
       authLogger.warn("link_cancel_failed", { reason: error instanceof Error ? error.name : "unknown" });
       showToast("계정 연동 취소 상태를 반영하지 못했어요.", "ERROR");
