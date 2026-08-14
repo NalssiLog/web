@@ -3,6 +3,7 @@ import type {
   CreateReportOptions,
   Location,
   MemberProfile,
+  NationwideLiveFeed,
   ReportPage,
   WeatherReport,
   WeatherSummary,
@@ -10,6 +11,7 @@ import type {
 } from "@/lib/types";
 
 export interface WeatherApi {
+  getNationwideLive(): Promise<NationwideLiveFeed>;
   getSummary(location: Location): Promise<WeatherSummary>;
   getReports(location: Location, cursor?: string): Promise<ReportPage>;
   getMyReports(cursor?: string): Promise<ReportPage>;

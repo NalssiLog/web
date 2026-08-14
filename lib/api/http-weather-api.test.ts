@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { httpWeatherApi } from "@/lib/api/http-weather-api";
-import { jsonRequest } from "@/lib/api/http-client";
+import { apiRequest, jsonRequest } from "@/lib/api/http-client";
 import { createRequiredReportAgreements } from "@/lib/legal";
 import type { CreateReportInput } from "@/lib/types";
 
@@ -8,10 +8,12 @@ vi.mock("@/lib/api/http-client", async (importOriginal) => {
   const original = await importOriginal<typeof import("@/lib/api/http-client")>();
   return {
     ...original,
+    apiRequest: vi.fn(),
     jsonRequest: vi.fn(),
   };
 });
 
+const apiRequestMock = vi.mocked(apiRequest);
 const jsonRequestMock = vi.mocked(jsonRequest);
 const backendReport = {
   id: "987654321098765432",
@@ -56,6 +58,7 @@ function createInput(overrides: Partial<CreateReportInput> = {}): CreateReportIn
 
 describe("httpWeatherApi.createReport", () => {
   beforeEach(() => {
+    apiRequestMock.mockReset();
     jsonRequestMock.mockReset();
     jsonRequestMock.mockResolvedValue(backendReport);
   });
@@ -78,5 +81,37 @@ describe("httpWeatherApi.createReport", () => {
 
     const body = jsonRequestMock.mock.calls[0]?.[2];
     expect(body).not.toHaveProperty("agreedTerms");
+  });
+});
+
+describe("httpWeatherApi.getNationwideLive", () => {
+  beforeEach(() => {
+    apiRequestMock.mockReset();
+  });
+
+  it("keeps the backend ticker message and normalizes its location", async () => {
+    apiRequestMock.mockResolvedValueOnce({
+      items: [{
+        reportId: backendReport.id,
+        location: backendReport.location,
+        message: " 비가 많이 와요 ",
+        createdAt: backendReport.createdAt,
+      }],
+    });
+
+    const feed = await httpWeatherApi.getNationwideLive();
+
+    expect(apiRequestMock).toHaveBeenCalledWith("/api/reports/live");
+    expect(feed.items[0]).toEqual({
+      reportId: backendReport.id,
+      location: {
+        id: backendReport.location.id,
+        label: backendReport.location.label,
+        fullName: backendReport.location.label,
+        shortName: backendReport.location.shortLabel,
+      },
+      message: "비가 많이 와요",
+      createdAt: backendReport.createdAt,
+    });
   });
 });

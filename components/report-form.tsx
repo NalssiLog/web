@@ -152,7 +152,10 @@ export function ReportForm() {
       queryClient.invalidateQueries({ queryKey: ["weather-summary"] });
       queryClient.invalidateQueries({ queryKey: ["my-weather-reports"] });
       showToast("날씨 제보를 올렸어요.", "SUCCESS");
-      dismissStoryStep(() => router.replace(`/reports/${report.id}`));
+      dismissStoryStep(() => {
+        setLocation(report.location);
+        router.replace("/");
+      });
     },
     onError: (error) => {
       if (error instanceof DOMException && error.name === "AbortError") return;

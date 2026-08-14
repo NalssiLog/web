@@ -7,6 +7,7 @@ import type {
   CreateReportOptions,
   Location,
   MemberProfile,
+  NationwideLiveFeed,
   PrecipitationStatus,
   ReportPage,
   SunlightStatus,
@@ -40,6 +41,15 @@ interface BackendReport {
 interface BackendReportPage {
   items: BackendReport[];
   nextCursor: string | null;
+}
+
+interface BackendNationwideLiveFeed {
+  items: Array<{
+    reportId: string;
+    location: LocationResponse;
+    message: string;
+    createdAt: string;
+  }>;
 }
 
 interface BackendStats {
@@ -220,6 +230,21 @@ async function uploadReportImages(files: File[], options: CreateReportOptions) {
 }
 
 export const httpWeatherApi: WeatherApi = {
+  async getNationwideLive(): Promise<NationwideLiveFeed> {
+    const response = await apiRequest<BackendNationwideLiveFeed>(
+      "/api/reports/live",
+    );
+
+    return {
+      items: response.items.map((item) => ({
+        reportId: item.reportId,
+        location: normalizeLocation(item.location),
+        message: item.message.trim(),
+        createdAt: item.createdAt,
+      })),
+    };
+  },
+
   async getSummary(location) {
     const resolvedLocation = await resolveBackendLocation(location);
     if (!resolvedLocation.id) throw new ApiError(400, "LOCATION_NOT_FOUND", "선택한 동네를 찾지 못했어요.");
