@@ -64,7 +64,7 @@ export const NationwideLiveTicker = memo(function NationwideLiveTicker() {
       aria-label={accessibleLabel}
       disabled={!currentItem}
       onClick={selectCurrentLocation}
-      className="flex min-h-9 min-w-0 flex-1 items-center gap-1.5 text-left text-[11px] font-extrabold text-[#386177] disabled:cursor-default"
+      className="flex min-h-9 w-fit min-w-0 max-w-full items-center gap-1.5 text-left text-[11px] font-extrabold text-[#386177] disabled:cursor-default"
     >
       <span className="relative flex size-1.5 shrink-0" aria-hidden="true">
         <span className="absolute inline-flex size-full animate-ping rounded-full bg-[#f06f6f] opacity-50" />

@@ -41,6 +41,10 @@ export const SUGGESTED_MESSAGES = [
   "햇빛이 따가워요",
   "지금은 비가 안 와요",
   "산책하기 좋은 날씨예요",
+  "공기가 건조해요",
+  "공기가 습해요",
+  "날씨가 더워요",
+  "날씨가 추워요",
 ] as const;
 
 export const DEFAULT_REPORT_IMAGE = "/weather/clear-sky.webp";
